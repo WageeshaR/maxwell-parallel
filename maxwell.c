@@ -103,6 +103,7 @@ int main(int argc, char *argv[]) {
 	parse_args(argc, argv);
 	setup();
 	omp_set_num_threads(omp_num_threads);
+	total_error = 0;
 
 	printf("Running problem size %f x %f on a %d x %d grid.\n", lengthX, lengthY, X, Y);
 	
@@ -138,6 +139,8 @@ int main(int argc, char *argv[]) {
 
 	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
+	if (enable_comparison == 1 && X == 100 && Y == 100)
+		printf("Total error is %.12e\n", total_error);
 
 	if (!no_output) 
 		write_result();

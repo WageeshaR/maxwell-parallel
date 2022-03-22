@@ -24,6 +24,7 @@ extern double dt;
 // Time to run for / or number of steps
 extern double T;
 extern int steps;
+extern double total_error;
 
 // x = Ex values
 // o = Ey values

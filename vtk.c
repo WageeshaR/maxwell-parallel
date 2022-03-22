@@ -5,6 +5,8 @@
 
 #include "vtk.h"
 #include "data.h"
+#include "setup.h"
+#include "args.h"
 
 char checkpoint_basename[1024];
 char result_filename[1024];
@@ -89,18 +91,30 @@ int write_vtk(char* filename) {
 
     fprintf(f, "\nPOINT_DATA %d\n", ((X+1) * (Y+1)));
 
+    if (enable_comparison == 1 && X == 100 && Y == 100) {
+        O_E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
+		O_B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
+        load_originals(filename);
+    }
+
     // Write out the E and B vector fields
     fprintf(f, "VECTORS E_field float\n");
     for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++)
+        for (int i = 0; i <= X; i++) {
             fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
+            total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
+        }
     }
     fprintf(f, "VECTORS B_field float\n");
     for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++)
+        for (int i = 0; i <= X; i++) {
             fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
+            total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
+        }
     }
-
+    // printf("Total error is %.12e\n", total_error);
+    free_3d_array(O_E);
+    free_3d_array(O_B);
     fclose(f);
     return 0;
 }

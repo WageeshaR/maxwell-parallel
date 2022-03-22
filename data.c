@@ -48,6 +48,7 @@ double *** B;
 // Original visualization data
 double *** O_E;
 double *** O_B;
+double total_error;
 
 /**
  * @brief Allocate a 2D array that is addressable using square brackets
