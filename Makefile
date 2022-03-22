@@ -1,4 +1,4 @@
-CC=gcc
+CC=gcc -fopenmp
 CFLAGS=-O3 
 LIBFLAGS=-lm
 

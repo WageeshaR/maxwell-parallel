@@ -13,6 +13,7 @@ int input_problem = 0;
 int no_output = 0;
 int output_freq = 100;
 int enable_checkpoints = 0;
+int omp_num_threads = 1;
 
 static struct option long_options[] = {
     {"cellx",      required_argument, 0, 'x'},
@@ -65,7 +66,7 @@ void parse_args(int argc, char *argv[]) {
 	int n_specified = 0;
 	int t_specified = 0;
 
-	while ((c = getopt_long(argc, argv, "x:y:n:t:f:do:cvh", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "x:y:n:t:f:l:do:cvh", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 'x':
 				X = atoi(optarg);
@@ -83,6 +84,9 @@ void parse_args(int argc, char *argv[]) {
 				break;
 			case 'f':
 				output_freq = atoi(optarg);
+				break;
+			case 'l':
+				omp_num_threads = atoi(optarg);
 				break;
 			case 'd':
 				no_output = 1;

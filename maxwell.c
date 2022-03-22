@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <omp.h>
 
 #include "args.h"
 #include "vtk.h"
@@ -13,6 +14,7 @@
  * 
  */
 void update_fields() {
+	#pragma omp parallel for schedule(static) collapse(2)
 	for (int i = 0; i < Bz_size_x; i++) {
 		for (int j = 0; j < Bz_size_y; j++) {
 			Bz[i][j] = Bz[i][j] - (dt / dx) * (Ey[i+1][j] - Ey[i][j])
@@ -20,12 +22,14 @@ void update_fields() {
 		}
 	}
 
+	#pragma omp parallel for schedule(static) collapse(2)
 	for (int i = 0; i < Ex_size_x; i++) {
 		for (int j = 1; j < Ex_size_y-1; j++) {
 			Ex[i][j] = Ex[i][j] + (dt / (dy * eps * mu)) * (Bz[i][j] - Bz[i][j-1]);
 		}
 	}
 
+	#pragma omp parallel for schedule(static) collapse(2)
 	for (int i = 1; i < Ey_size_x-1; i++) {
 		for (int j = 0; j < Ey_size_y; j++) {
 			Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
@@ -38,11 +42,13 @@ void update_fields() {
  * 
  */
 void apply_boundary() {
+	#pragma omp parallel for schedule(static)
 	for (int i = 0; i < Ex_size_x; i++) {
 		Ex[i][0] = -Ex[i][1];
 		Ex[i][Ex_size_y-1] = -Ex[i][Ex_size_y-2];
 	}
 
+	#pragma omp parallel for schedule(static)
 	for (int j = 0; j < Ey_size_y; j++) {
 		Ey[0][j] = -Ey[1][j];
 		Ey[Ey_size_x-1][j] = -Ey[Ey_size_x-2][j];
@@ -56,28 +62,33 @@ void apply_boundary() {
  * @param B_mag The returned total magnitude of the Magnetic field (B) 
  */
 void resolve_to_grid(double *E_mag, double *B_mag) {
-	*E_mag = 0.0;
-	*B_mag = 0.0;
+	double local_E_mag = 0.0;
+	double local_B_mag = 0.0;
 
+	#pragma omp parallel for schedule(static) collapse(2) reduction(+:local_E_mag)
 	for (int i = 1; i < E_size_x-1; i++) {
 		for (int j = 1; j < E_size_y-1; j++) {
 			E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
 			E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
 			//E[i][j][2] = 0.0; // in 2D we don't care about this dimension
 
-			*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
+			local_E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
 		}
 	}
 	
+	#pragma omp parallel for schedule(static) collapse(2) reduction(+:local_B_mag)
 	for (int i = 1; i < B_size_x-1; i++) {
 		for (int j = 1; j < B_size_y-1; j++) {
 			//B[i][j][0] = 0.0; // in 2D we don't care about these dimensions
 			//B[i][j][1] = 0.0;
 			B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
 
-			*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
+			local_B_mag += sqrt(B[i][j][2] * B[i][j][2]);
 		}
 	}
+
+	*E_mag = local_E_mag;
+	*B_mag = local_B_mag;
 }
 
 /**
@@ -91,6 +102,7 @@ int main(int argc, char *argv[]) {
 	set_defaults();
 	parse_args(argc, argv);
 	setup();
+	omp_set_num_threads(omp_num_threads);
 
 	printf("Running problem size %f x %f on a %d x %d grid.\n", lengthX, lengthY, X, Y);
 	
