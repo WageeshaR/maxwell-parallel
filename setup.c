@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "vtk.h"
 #include "data.h"
 #include "setup.h"
+#include "args.h"
 
 /**
  * @brief Set up some default values before arguments have been loaded
@@ -21,6 +23,57 @@ void set_defaults() {
 	T = 1.6e-9;
 
 	set_default_base();
+}
+
+void load_originals() {
+	printf("Loading originals\n");
+	FILE * fp;
+    char * line = NULL;
+    size_t len = 0;
+    ssize_t read;
+	for (int i = 0; i < 1000; i++) {
+		char filename[1024];
+		sprintf(filename, "original/sim-%d.vtk", i);
+		fp = fopen(filename, "r");
+		int reading = 0;
+		int iter = 0;
+		const char s[2] = " ";
+		char *token;
+		if (fp == NULL)
+			exit(EXIT_FAILURE);
+		while ((read = getline(&line, &len, fp)) != -1) {
+			int j = iter / 101;
+			int i = iter % 101;
+			if (reading == 1 && strcmp(line, "VECTORS B_field float\n") != 0) {
+				/* get the first token */
+				token = strtok(line, s);
+				O_E[j][i][0] = strtod(token, NULL);
+				/* walk through other tokens */
+				while( token != NULL ) {
+					token = strtok(NULL, s);
+					O_E[j][i][1] = atof(token);
+					break;	// Breaking because in O_E we only read first 2 dimensions
+				}
+				iter++;
+			}
+			if (reading == 2) {
+				/* get the last char string */
+				char *last = strrchr(line, ' ');
+				O_B[j][i][2] = atof(last);
+				iter++;
+			}
+			if (strcmp(line, "VECTORS E_field float\n") == 0) {
+				reading = 1;
+				iter = 0;
+			}
+			if (strcmp(line, "VECTORS B_field float\n") == 0) {
+				reading = 2;
+				iter = 0;
+			}
+		}
+		fclose(fp);
+	}
+	printf("Loading originals finished\n");
 }
 
 /**
@@ -55,6 +108,12 @@ void allocate_arrays() {
 
 	B_size_x = X+1; B_size_y = Y+1; B_size_z = 3;
 	B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
+
+	if (enable_comparison == 1 && X == 100 && Y == 100) {
+		O_E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
+		O_B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
+		load_originals();
+	}
 }
 
 /**
