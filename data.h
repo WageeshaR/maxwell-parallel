@@ -58,6 +58,10 @@ extern double *** E;
 extern int B_size_x, B_size_y, B_size_z;
 extern double *** B;
 
+// Arrays used to load original visualization data
+extern double *** O_E;
+extern double *** O_B;
+
 double **alloc_2d_array(int m, int n);
 void free_2d_array(double ** array);
 double ***alloc_3d_array(int m, int n, int o);

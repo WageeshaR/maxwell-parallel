@@ -45,6 +45,10 @@ double *** E;
 int B_size_x, B_size_y, B_size_z;
 double *** B;
 
+// Original visualization data
+double *** O_E;
+double *** O_B;
+
 /**
  * @brief Allocate a 2D array that is addressable using square brackets
  * 
