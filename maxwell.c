@@ -116,15 +116,15 @@ int main(int argc, char *argv[]) {
 	
 	if (verbose) print_opts();
 	
-	allocate_arrays();
+	double start, end;
+	start = omp_get_wtime();
 
+	allocate_arrays();
 	problem_set_up();
 
 	// start at time 0
 	double t = 0.0;
 	int i = 0;
-	double start, end;
-	start = omp_get_wtime();
 	while (i < steps) {
 		apply_boundary();
 		update_fields();
@@ -134,10 +134,10 @@ int main(int argc, char *argv[]) {
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
-			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+			// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
-			if ((!no_output) && (enable_checkpoints))
-				write_checkpoint(i);
+			// if ((!no_output) && (enable_checkpoints))
+			// 	write_checkpoint(i);
 		}
 
 		i++;
@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
 	double E_mag, B_mag;
 	resolve_to_grid(&E_mag, &B_mag);
 
-	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+	// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
 	end = omp_get_wtime();
 	printf("Elapsed wall clock time is %fs\n", end - start);
