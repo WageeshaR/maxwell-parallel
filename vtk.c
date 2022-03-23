@@ -102,19 +102,23 @@ int write_vtk(char* filename) {
     for (int j = 0; j <= Y; j++) {
         for (int i = 0; i <= X; i++) {
             fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
-            total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
+            if (enable_comparison == 1)
+                total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
         }
     }
     fprintf(f, "VECTORS B_field float\n");
     for (int j = 0; j <= Y; j++) {
         for (int i = 0; i <= X; i++) {
             fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
-            total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
+            if (enable_comparison == 1)
+                total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
         }
     }
     // printf("Total error is %.12e\n", total_error);
-    free_3d_array(O_E);
-    free_3d_array(O_B);
+    if (enable_comparison == 1) {
+        free_3d_array(O_E);
+        free_3d_array(O_B);
+    }
     fclose(f);
     return 0;
 }
