@@ -91,7 +91,7 @@ int write_vtk(char* filename) {
 
     fprintf(f, "\nPOINT_DATA %d\n", ((X+1) * (Y+1)));
 
-    if (enable_comparison == 1 && X == 100 && Y == 100) {
+    if (enable_comparison == 1) {
         O_E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
 		O_B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
         load_originals(filename);

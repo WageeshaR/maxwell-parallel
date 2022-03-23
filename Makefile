@@ -1,5 +1,5 @@
-CC=gcc -fopenmp
-CFLAGS=-g -Wall -O3 
+CC=gcc
+CFLAGS=-fopenmp -g -Wall -O3 
 LIBFLAGS=-lm
 
 OBJDIR = obj
