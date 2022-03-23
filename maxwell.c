@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 			resolve_to_grid(&E_mag, &B_mag);
 			// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
-			// if ((!no_output) && (enable_checkpoints))
-			// 	write_checkpoint(i);
+			if ((!no_output) && (enable_checkpoints))
+				write_checkpoint(i);
 		}
 
 		i++;

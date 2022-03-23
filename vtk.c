@@ -1,7 +1,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
+#include <omp.h>
 
 #include "vtk.h"
 #include "data.h"
@@ -68,7 +70,26 @@ int write_result() {
  * @return int Return whether the write was successful
  */
 int write_vtk(char* filename) {
-    FILE * f = fopen(filename, "w");
+    FILE *f, **files;
+    char **file_names;
+    int num_t = omp_num_threads;
+    files = (FILE **) malloc(num_t * sizeof(FILE *));
+    file_names = (char **) malloc(num_t * sizeof(char *));
+    for (int i = 0; i < num_t; i++) {
+        char f_name[1024];
+        char num[16];
+        sprintf(num, "%d", i);
+        strcpy(f_name, filename);
+        strcat(f_name, num);
+        file_names[i] = (char *) malloc(1024 * sizeof(char));
+        strcpy(file_names[i], f_name);
+        files[i] = fopen(f_name, "w+");
+        if (files[i] == NULL) {
+            perror("Error opening temporary file");
+            return -1;
+        }
+    }
+    f = fopen(filename, "w");
     if (f == NULL) {
         perror("Error");
         return -1;
@@ -99,26 +120,57 @@ int write_vtk(char* filename) {
 
     // Write out the E and B vector fields
     fprintf(f, "VECTORS E_field float\n");
+
+    #pragma omp parallel for schedule(static) collapse(2)
     for (int j = 0; j <= Y; j++) {
         for (int i = 0; i <= X; i++) {
-            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
+            int t_num = omp_get_thread_num();
+            fprintf(files[t_num], "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
             if (enable_comparison == 1)
                 total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
         }
     }
+
+    f = freopen(filename, "a", f);
+    for (int i = 0; i < num_t; i++) {
+        files[i] = freopen(file_names[i], "r", files[i]);
+        char buffer[256];
+        while(fgets(buffer, 256, files[i]) != NULL) {
+            fprintf(f, "%s", buffer);
+        }
+        files[i] = freopen(file_names[i], "w+", files[i]);
+    }
     fprintf(f, "VECTORS B_field float\n");
+
+    #pragma omp parallel for schedule(static) collapse(2)
     for (int j = 0; j <= Y; j++) {
         for (int i = 0; i <= X; i++) {
-            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
+            int t_num = omp_get_thread_num();
+            fprintf(files[t_num], "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
             if (enable_comparison == 1)
                 total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
         }
     }
-    // printf("Total error is %.12e\n", total_error);
+
+    for (int i = 0; i < num_t; i++) {
+        files[i] = freopen(file_names[i], "r", files[i]);
+        char buffer[256];
+        while(fgets(buffer, 256, files[i]) != NULL) {
+            fprintf(f, "%s", buffer);
+        }
+        fclose(files[i]);
+        remove(file_names[i]);
+        free(file_names[i]);
+    }
+    
+    free(files);
+    free(file_names);
+    fclose(f);
+
     if (enable_comparison == 1) {
+        printf("Total error is %.12e\n", total_error);
         free_3d_array(O_E);
         free_3d_array(O_B);
     }
-    fclose(f);
     return 0;
 }
