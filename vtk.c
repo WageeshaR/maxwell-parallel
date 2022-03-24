@@ -168,7 +168,6 @@ int write_vtk(char* filename) {
     fclose(f);
 
     if (enable_comparison == 1) {
-        printf("Total error is %.12e\n", total_error);
         free_3d_array(O_E);
         free_3d_array(O_B);
     }
