@@ -70,24 +70,13 @@ int write_result() {
  * @return int Return whether the write was successful
  */
 int write_vtk(char* filename) {
-    FILE *f, **files;
-    char **file_names;
+    FILE *f;
+    char **file_contents;
     int num_t = omp_num_threads;
-    files = (FILE **) malloc(num_t * sizeof(FILE *));
-    file_names = (char **) malloc(num_t * sizeof(char *));
+    file_contents = (char **) malloc(num_t * sizeof(char *));
+    int total_rows = (X+1) * (Y+1) / num_t;
     for (int i = 0; i < num_t; i++) {
-        char f_name[1024];
-        char num[16];
-        sprintf(num, "%d", i);
-        strcpy(f_name, filename);
-        strcat(f_name, num);
-        file_names[i] = (char *) malloc(1024 * sizeof(char));
-        strcpy(file_names[i], f_name);
-        files[i] = fopen(f_name, "w+");
-        if (files[i] == NULL) {
-            perror("Error opening temporary file");
-            return -1;
-        }
+        file_contents[i] = (char *) malloc(60 * total_rows * sizeof(char));
     }
     f = fopen(filename, "w");
     if (f == NULL) {
@@ -121,50 +110,48 @@ int write_vtk(char* filename) {
     // Write out the E and B vector fields
     fprintf(f, "VECTORS E_field float\n");
 
-    #pragma omp parallel for schedule(static) collapse(2)
-    for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++) {
-            int t_num = omp_get_thread_num();
-            fprintf(files[t_num], "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
-            if (enable_comparison == 1)
-                total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
+    #pragma omp parallel
+    {
+        int t_num = omp_get_thread_num();
+        file_contents[t_num] = (char *) malloc(60 * total_rows * sizeof(char));
+        #pragma omp for schedule(static) collapse(2)
+        for (int j = 0; j <= Y; j++) {
+            for (int i = 0; i <= X; i++) {
+                char *buffer = malloc(64 * sizeof(char));
+                sprintf(buffer, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
+                strcat(file_contents[t_num], buffer);
+                if (enable_comparison == 1)
+                    total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
+            }
         }
     }
 
-    f = freopen(filename, "a", f);
     for (int i = 0; i < num_t; i++) {
-        files[i] = freopen(file_names[i], "r", files[i]);
-        char buffer[256];
-        while(fgets(buffer, 256, files[i]) != NULL) {
-            fprintf(f, "%s", buffer);
-        }
-        files[i] = freopen(file_names[i], "w+", files[i]);
+        fwrite(file_contents[i], sizeof(char), strlen(file_contents[i]), f);
     }
     fprintf(f, "VECTORS B_field float\n");
 
-    #pragma omp parallel for schedule(static) collapse(2)
-    for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++) {
-            int t_num = omp_get_thread_num();
-            fprintf(files[t_num], "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
-            if (enable_comparison == 1)
-                total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
+    #pragma omp parallel
+    {
+        int t_num = omp_get_thread_num();
+        file_contents[t_num] = (char *) malloc(60 * total_rows * sizeof(char));
+        #pragma omp for schedule(static) collapse(2)
+        for (int j = 0; j <= Y; j++) {
+            for (int i = 0; i <= X; i++) {
+                char *buffer = malloc(64 * sizeof(char));
+                sprintf(buffer, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
+                strcat(file_contents[t_num], buffer);
+                if (enable_comparison == 1)
+                    total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
+            }
         }
     }
 
     for (int i = 0; i < num_t; i++) {
-        files[i] = freopen(file_names[i], "r", files[i]);
-        char buffer[256];
-        while(fgets(buffer, 256, files[i]) != NULL) {
-            fprintf(f, "%s", buffer);
-        }
-        fclose(files[i]);
-        remove(file_names[i]);
-        free(file_names[i]);
+        fwrite(file_contents[i], sizeof(char), strlen(file_contents[i]), f);
     }
-    
-    free(files);
-    free(file_names);
+
+    free(file_contents);
     fclose(f);
 
     if (enable_comparison == 1) {
