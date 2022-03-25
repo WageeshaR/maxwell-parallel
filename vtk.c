@@ -70,15 +70,7 @@ int write_result() {
  * @return int Return whether the write was successful
  */
 int write_vtk(char* filename) {
-    FILE *f;
-    char **file_contents;
-    int num_t = omp_num_threads;
-    file_contents = (char **) malloc(num_t * sizeof(char *));
-    int total_rows = (X+1) * (Y+1) / num_t;
-    for (int i = 0; i < num_t; i++) {
-        file_contents[i] = (char *) malloc(60 * total_rows * sizeof(char));
-    }
-    f = fopen(filename, "w");
+    FILE * f = fopen(filename, "w");
     if (f == NULL) {
         perror("Error");
         return -1;
@@ -101,62 +93,18 @@ int write_vtk(char* filename) {
 
     fprintf(f, "\nPOINT_DATA %d\n", ((X+1) * (Y+1)));
 
-    if (enable_comparison == 1) {
-        O_E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
-		O_B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
-        load_originals(filename);
-    }
-
     // Write out the E and B vector fields
     fprintf(f, "VECTORS E_field float\n");
-
-    #pragma omp parallel
-    {
-        int t_num = omp_get_thread_num();
-        file_contents[t_num] = (char *) malloc(60 * total_rows * sizeof(char));
-        #pragma omp for schedule(static) collapse(2)
-        for (int j = 0; j <= Y; j++) {
-            for (int i = 0; i <= X; i++) {
-                char *buffer = malloc(64 * sizeof(char));
-                sprintf(buffer, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
-                strcat(file_contents[t_num], buffer);
-                if (enable_comparison == 1)
-                    total_error += abs(O_E[i][j][0] - E[i][j][0]) + abs(O_E[i][j][1] - E[i][j][1]);
-            }
-        }
-    }
-
-    for (int i = 0; i < num_t; i++) {
-        fwrite(file_contents[i], sizeof(char), strlen(file_contents[i]), f);
+    for (int j = 0; j <= Y; j++) {
+        for (int i = 0; i <= X; i++)
+            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
     }
     fprintf(f, "VECTORS B_field float\n");
-
-    #pragma omp parallel
-    {
-        int t_num = omp_get_thread_num();
-        file_contents[t_num] = (char *) malloc(60 * total_rows * sizeof(char));
-        #pragma omp for schedule(static) collapse(2)
-        for (int j = 0; j <= Y; j++) {
-            for (int i = 0; i <= X; i++) {
-                char *buffer = malloc(64 * sizeof(char));
-                sprintf(buffer, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
-                strcat(file_contents[t_num], buffer);
-                if (enable_comparison == 1)
-                    total_error += abs(O_B[i][j][0] - B[i][j][0]) + abs(O_B[i][j][1] - B[i][j][1]);
-            }
-        }
+    for (int j = 0; j <= Y; j++) {
+        for (int i = 0; i <= X; i++)
+            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
     }
 
-    for (int i = 0; i < num_t; i++) {
-        fwrite(file_contents[i], sizeof(char), strlen(file_contents[i]), f);
-    }
-
-    free(file_contents);
     fclose(f);
-
-    if (enable_comparison == 1) {
-        free_3d_array(O_E);
-        free_3d_array(O_B);
-    }
     return 0;
 }
