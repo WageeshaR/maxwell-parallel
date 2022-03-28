@@ -47,8 +47,8 @@ void allocate_arrays() {
 	Ex_size_x = X; Ex_size_y = Y+1;
 	Ex = alloc_2d_array(Ex_size_x, Ex_size_y);
 	Ey_size_x = X+1; Ey_size_y = Y;
-	if (rank == size-1)
-		Ey_size_x += 1;
+	// if (rank == size-1)
+	// 	Ey_size_x += 1;
 	Ey = alloc_2d_array(Ey_size_x, Ey_size_y);
 	
 	Bz_size_x = X; Bz_size_y = Y;
@@ -93,6 +93,8 @@ void problem_set_up() {
 			double tx = (rlen == 0) ? 0 : ry / rlen;
             double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
             Ex[i-abs_ex_i][j] = mag * tx;
+			// if (rank == 1 && i-abs_ex_i == 49)
+			// 	printf("Value of Ex[first][%d] is %14.8e\n", j, mag * tx);
 		}
 	}
     for (int i = abs_ey_i + 0; i < abs_ey_i + Ey_size_x-1; i++ ) {
@@ -105,6 +107,8 @@ void problem_set_up() {
             double ty = (rlen == 0) ? 0 : -rx / rlen;
 			double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
             Ey[i-abs_ey_i][j] = mag * ty;
+			// if (rank == 1 && i-abs_ey_i == 49)
+			// 	printf("Value of Ey[first][%d] is %14.8e\n", j, mag * ty);
 		}
 	}
 }

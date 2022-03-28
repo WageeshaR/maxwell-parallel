@@ -14,6 +14,7 @@
  * 
  */
 void update_fields() {
+	int k;
 	for (int i = 0; i < Bz_size_x; i++) {
 		for (int j = 0; j < Bz_size_y; j++) {
 			// if (Bz[i][j] != 0)
@@ -30,11 +31,25 @@ void update_fields() {
 		}
 	}
 
-	for (int i = 1; i < Ey_size_x-2; i++) {
-		for (int j = 0; j < Ey_size_y; j++) {
-			Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
+	if (rank == 0) {
+		for (int i = 1; i < Ey_size_x-1; i++) {
+			for (int j = 0; j < Ey_size_y; j++) {
+				k++;
+				Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
+			}
+		}
+	} else {
+		for (int i = 0; i < Ey_size_x-1; i++) {
+			for (int j = 0; j < Ey_size_y; j++) {
+				k++;
+				if (i == 0)
+					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - 0);
+				else
+					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
+			}
 		}
 	}
+	// printf("total iterations in rank %d is %d\n", rank, k);
 }
 
 /**
@@ -84,6 +99,8 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 			*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
 		}
 	}
+	// printf("E_mag is %14.8e in process %d\n", *E_mag, rank);
+	// printf("B_mag is %14.8e in process %d\n", *B_mag, rank);
 }
 
 /**
@@ -152,7 +169,6 @@ int main(int argc, char *argv[]) {
 			// if ((!no_output) && (enable_checkpoints) && rank == 0)
 			// 	write_checkpoint(i);
 		}
-
 		i++;
 	}
 
