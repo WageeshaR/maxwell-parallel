@@ -35,6 +35,8 @@ void setup() {
 	
 	if (steps == 0) // only set this if steps hasn't been specified
 		steps = (int) (T / dt);
+
+	X = X / size;
 }
 
 /**
@@ -43,9 +45,11 @@ void setup() {
  */
 void allocate_arrays() {
 	Ex_size_x = X; Ex_size_y = Y+1;
-	Ex = alloc_2d_array(X, Y+1);
+	Ex = alloc_2d_array(Ex_size_x, Ex_size_y);
 	Ey_size_x = X+1; Ey_size_y = Y;
-	Ey = alloc_2d_array(X+1, Y);
+	if (rank == size-1)
+		Ey_size_x += 1;
+	Ey = alloc_2d_array(Ey_size_x, Ey_size_y);
 	
 	Bz_size_x = X; Bz_size_y = Y;
 	Bz = alloc_2d_array(X, Y);
@@ -74,10 +78,13 @@ void free_arrays() {
  * 
  */
 void problem_set_up() {
-    for (int i = 0; i < Ex_size_x; i++ ) {
+	int abs_ex_i = rank * Ex_size_x; // To take the absolute horizontal iteration
+	int abs_ey_i = rank < size -1 ? rank * (Ey_size_x - 1) : rank * (Ey_size_x - 2);
+	double xcen = lengthX / 2.0;
+	double ycen = lengthY / 2.0;
+
+    for (int i = abs_ex_i + 0; i < abs_ex_i + Ex_size_x; i++ ) {
         for (int j = 0; j < Ex_size_y; j++) {
-            double xcen = lengthX / 2.0;
-            double ycen = lengthY / 2.0;
             double xcoord = (i - xcen) * dx;
             double ycoord = j * dy;
             double rx = xcen - xcoord;
@@ -85,13 +92,11 @@ void problem_set_up() {
             double rlen = sqrt(rx*rx + ry*ry);
 			double tx = (rlen == 0) ? 0 : ry / rlen;
             double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
-            Ex[i][j] = mag * tx;
+            Ex[i-abs_ex_i][j] = mag * tx;
 		}
 	}
-    for (int i = 0; i < Ey_size_x; i++ ) {
+    for (int i = abs_ey_i + 0; i < abs_ey_i + Ey_size_x-1; i++ ) {
         for (int j = 0; j < Ey_size_y; j++) {
-            double xcen = lengthX / 2.0;
-            double ycen = lengthY / 2.0;
             double xcoord = i * dx;
             double ycoord = (j - ycen) * dy;
             double rx = xcen - xcoord;
@@ -99,7 +104,7 @@ void problem_set_up() {
             double rlen = sqrt(rx*rx + ry*ry);
             double ty = (rlen == 0) ? 0 : -rx / rlen;
 			double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
-            Ey[i][j] = mag * ty;
+            Ey[i-abs_ey_i][j] = mag * ty;
 		}
 	}
 }

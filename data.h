@@ -12,6 +12,10 @@ extern const double cfl;
 extern double lengthX;
 extern double lengthY;
 
+// Rank and size of MPI processes
+extern int rank;
+extern int size;
+
 // Discretisation in cells
 extern int X;
 extern int Y;

@@ -18,6 +18,9 @@ const double cfl = 0.6363961031;
 double lengthX;
 double lengthY;
 
+int rank;
+int size;
+
 // Discretisation in cells
 int X;
 int Y;
