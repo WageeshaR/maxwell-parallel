@@ -131,28 +131,16 @@ int main(int argc, char *argv[]) {
 	double t = 0.0;
 	int i = 0;
 
-	// MPI setups
-	if (rank == 1) {
-		Ey[0][0] = 1.0;
-		Ey[0][1] = 2.0;
-		Ey[0][2] = 3.0;
-		// printf("Ey[first] is %14.8e, %14.8e, %14.8e and I'm process %d\n", Ey[0][0], Ey[0][1], Ey[0][2], rank);
-	}
 	MPI_Datatype ey_column;
-	MPI_Type_vector(Ey_size_y, 1, Ey_size_x, MPI_DOUBLE, &ey_column);
+	MPI_Type_vector(Ey_size_y, 1, 1, MPI_DOUBLE, &ey_column);
 	MPI_Type_commit(&ey_column);
 	int left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
 	int right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
 	int tag = 13;
 
 	while (i < steps) {
-		// Setting up ghost columns for Ey
-		for (int i = 0; i < Ey_size_y; i++)
-			MPI_Sendrecv(&Ey[0][i], 1, MPI_DOUBLE, left, tag, &Ey[Ey_size_x-1][i], 1, MPI_DOUBLE, right, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		// if (rank == 0)
-		// 	printf("Ey[last] is %14.8e, %14.8e, %14.8e and I'm process %d\n", Ey[Ey_size_x-1][0], Ey[Ey_size_x-1][1], Ey[Ey_size_x-1][2], rank);
+		MPI_Sendrecv(Ey[0], 1, ey_column, left, tag, Ey[Ey_size_x-1], 1, ey_column, right, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		apply_boundary();
-		// printf("Fucking weird Bz[1][2] is %14.8e and I'm process %d\n", Bz[1][2], rank);	
 		update_fields();
 		double global_E_mag, global_B_mag;
 		t += dt;
