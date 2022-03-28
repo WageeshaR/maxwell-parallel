@@ -14,14 +14,10 @@
  * 
  */
 void update_fields() {
-	int k;
 	for (int i = 0; i < Bz_size_x; i++) {
 		for (int j = 0; j < Bz_size_y; j++) {
-			// if (Bz[i][j] != 0)
-			// 	printf("I'm process %d and Bz[%d][%d] is %14.8e\n", rank, i, j, Bz[i][j]);
 			Bz[i][j] = Bz[i][j] - (dt / dx) * (Ey[i+1][j] - Ey[i][j])
 				                + (dt / dy) * (Ex[i][j+1] - Ex[i][j]);
-			// printf("I'm process %d and Bz[i][j] is %14.8e\n", rank, Bz[i][j]);
 		}
 	}
 
@@ -34,22 +30,19 @@ void update_fields() {
 	if (rank == 0) {
 		for (int i = 1; i < Ey_size_x-1; i++) {
 			for (int j = 0; j < Ey_size_y; j++) {
-				k++;
 				Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
 			}
 		}
 	} else {
 		for (int i = 0; i < Ey_size_x-1; i++) {
 			for (int j = 0; j < Ey_size_y; j++) {
-				k++;
 				if (i == 0)
-					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - 0);
+					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[Bz_size_x][j]);
 				else
 					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
 			}
 		}
 	}
-	// printf("total iterations in rank %d is %d\n", rank, k);
 }
 
 /**
@@ -92,15 +85,11 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 	
 	for (int i = 1; i < B_size_x-1; i++) {
 		for (int j = 1; j < B_size_y-1; j++) {
-			//B[i][j][0] = 0.0; // in 2D we don't care about these dimensions
-			//B[i][j][1] = 0.0;
 			B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
 
 			*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
 		}
 	}
-	// printf("E_mag is %14.8e in process %d\n", *E_mag, rank);
-	// printf("B_mag is %14.8e in process %d\n", *B_mag, rank);
 }
 
 /**
@@ -134,12 +123,18 @@ int main(int argc, char *argv[]) {
 	MPI_Datatype ey_column;
 	MPI_Type_vector(Ey_size_y, 1, 1, MPI_DOUBLE, &ey_column);
 	MPI_Type_commit(&ey_column);
+	MPI_Datatype bz_column;
+	MPI_Type_vector(Bz_size_y, 1, 1, MPI_DOUBLE, &bz_column);
+	MPI_Type_commit(&bz_column);
 	int left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
 	int right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
 	int tag = 13;
 
 	while (i < steps) {
 		MPI_Sendrecv(Ey[0], 1, ey_column, left, tag, Ey[Ey_size_x-1], 1, ey_column, right, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Sendrecv(Bz[Bz_size_x-1], 1, bz_column, right, tag, Bz[Bz_size_x], 1, bz_column, left, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Barrier(MPI_COMM_WORLD);
+
 		apply_boundary();
 		update_fields();
 		double global_E_mag, global_B_mag;
@@ -154,8 +149,8 @@ int main(int argc, char *argv[]) {
 			if (rank == 0)
 				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e in process %d\n", i, t, dt, global_E_mag, global_B_mag, rank);
 
-			// if ((!no_output) && (enable_checkpoints) && rank == 0)
-			// 	write_checkpoint(i);
+			if ((!no_output) && (enable_checkpoints) && rank == 0)
+				write_checkpoint(i);
 		}
 		i++;
 	}
