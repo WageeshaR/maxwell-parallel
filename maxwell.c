@@ -14,12 +14,20 @@
  * 
  */
 void update_fields() {
+	MPI_Datatype bz_column;
+	MPI_Type_vector(Bz_size_y, 1, 1, MPI_DOUBLE, &bz_column);
+	MPI_Type_commit(&bz_column);
+	int left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
+	int right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
+	int tag = 13;
+
 	for (int i = 0; i < Bz_size_x; i++) {
 		for (int j = 0; j < Bz_size_y; j++) {
 			Bz[i][j] = Bz[i][j] - (dt / dx) * (Ey[i+1][j] - Ey[i][j])
 				                + (dt / dy) * (Ex[i][j+1] - Ex[i][j]);
 		}
 	}
+	MPI_Sendrecv(Bz[Bz_size_x-1], 1, bz_column, right, tag, Bz[Bz_size_x], 1, bz_column, left, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	for (int i = 0; i < Ex_size_x; i++) {
 		for (int j = 1; j < Ex_size_y-1; j++) {
@@ -132,7 +140,6 @@ int main(int argc, char *argv[]) {
 
 	while (i < steps) {
 		MPI_Sendrecv(Ey[0], 1, ey_column, left, tag, Ey[Ey_size_x-1], 1, ey_column, right, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		MPI_Sendrecv(Bz[Bz_size_x-1], 1, bz_column, right, tag, Bz[Bz_size_x], 1, bz_column, left, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 		MPI_Barrier(MPI_COMM_WORLD);
 
 		apply_boundary();
