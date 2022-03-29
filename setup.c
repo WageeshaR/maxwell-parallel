@@ -47,12 +47,10 @@ void allocate_arrays() {
 	Ex_size_x = X; Ex_size_y = Y+1;
 	Ex = alloc_2d_array(Ex_size_x, Ex_size_y);
 	Ey_size_x = X+1; Ey_size_y = Y;
-	// if (rank == size-1)
-	// 	Ey_size_x += 1;
 	Ey = alloc_2d_array(Ey_size_x, Ey_size_y);
 	
 	Bz_size_x = X; Bz_size_y = Y;
-	Bz = alloc_2d_array(X+1, Y); // Adding ghost column
+	Bz = alloc_2d_array(Bz_size_x+1, Bz_size_y); // Adding ghost column
 	
 	E_size_x = X+1; E_size_y = Y+1; E_size_z = 3;
 	E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
@@ -79,7 +77,7 @@ void free_arrays() {
  */
 void problem_set_up() {
 	int abs_ex_i = rank * Ex_size_x; // To take the absolute horizontal iteration
-	int abs_ey_i = rank < size -1 ? rank * (Ey_size_x - 1) : rank * (Ey_size_x - 2);
+	int abs_ey_i = rank * (Ey_size_x - 1);
 	double xcen = lengthX / 2.0;
 	double ycen = lengthY / 2.0;
 
@@ -93,8 +91,6 @@ void problem_set_up() {
 			double tx = (rlen == 0) ? 0 : ry / rlen;
             double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
             Ex[i-abs_ex_i][j] = mag * tx;
-			// if (rank == 1 && i-abs_ex_i == 49)
-			// 	printf("Value of Ex[first][%d] is %14.8e\n", j, mag * tx);
 		}
 	}
     for (int i = abs_ey_i + 0; i < abs_ey_i + Ey_size_x-1; i++ ) {
@@ -107,8 +103,6 @@ void problem_set_up() {
             double ty = (rlen == 0) ? 0 : -rx / rlen;
 			double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
             Ey[i-abs_ey_i][j] = mag * ty;
-			// if (rank == 1 && i-abs_ey_i == 49)
-			// 	printf("Value of Ey[first][%d] is %14.8e\n", j, mag * ty);
 		}
 	}
 }

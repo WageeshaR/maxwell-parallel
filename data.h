@@ -15,6 +15,8 @@ extern double lengthY;
 // Rank and size of MPI processes
 extern int rank;
 extern int size;
+extern int left;
+extern int right;
 
 // Discretisation in cells
 extern int X;

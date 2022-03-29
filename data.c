@@ -20,6 +20,8 @@ double lengthY;
 
 int rank;
 int size;
+int left;
+int right;
 
 // Discretisation in cells
 int X;

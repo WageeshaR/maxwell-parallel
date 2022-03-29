@@ -13,13 +13,10 @@
  * @brief Update the magnetic and electric fields. The magnetic fields are updated for a half-time-step. The electric fields are updated for a full time-step.
  * 
  */
-void update_fields() {
-	MPI_Datatype bz_column;
-	MPI_Type_vector(Bz_size_y, 1, 1, MPI_DOUBLE, &bz_column);
-	MPI_Type_commit(&bz_column);
-	int left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
-	int right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
-	int tag = 13;
+void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype datatype3) {
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Sendrecv(Ey[0], 1, datatype2, left, 13, Ey[Ey_size_x-1], 1, datatype2, right, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	for (int i = 0; i < Bz_size_x; i++) {
 		for (int j = 0; j < Bz_size_y; j++) {
@@ -27,13 +24,15 @@ void update_fields() {
 				                + (dt / dy) * (Ex[i][j+1] - Ex[i][j]);
 		}
 	}
-	MPI_Sendrecv(Bz[Bz_size_x-1], 1, bz_column, right, tag, Bz[Bz_size_x], 1, bz_column, left, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	for (int i = 0; i < Ex_size_x; i++) {
 		for (int j = 1; j < Ex_size_y-1; j++) {
 			Ex[i][j] = Ex[i][j] + (dt / (dy * eps * mu)) * (Bz[i][j] - Bz[i][j-1]);
 		}
 	}
+
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Sendrecv(Bz[Bz_size_x-1], 1, datatype3, right, 13, Bz[Bz_size_x], 1, datatype3, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 	if (rank == 0) {
 		for (int i = 1; i < Ey_size_x-1; i++) {
@@ -51,6 +50,9 @@ void update_fields() {
 			}
 		}
 	}
+
+	// MPI_Barrier(MPI_COMM_WORLD);
+	// MPI_Sendrecv(Ex[Ex_size_x-1], 1, datatype1, right, 13, Ex[Ex_size_x], 1, datatype1, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
 /**
@@ -91,11 +93,24 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 		}
 	}
 	
-	for (int i = 1; i < B_size_x-1; i++) {
-		for (int j = 1; j < B_size_y-1; j++) {
-			B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
+	if (rank == 0) {
+		for (int i = 1; i < B_size_x-1; i++) {
+			for (int j = 1; j < B_size_y-1; j++) {
+				B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
 
-			*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
+				*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
+			}
+		}
+	} else {
+		for (int i = 0; i < B_size_x-1; i++) {
+			for (int j = 1; j < B_size_y-1; j++) {
+				if (i == 0)
+					B[i][j][2] = (Bz[Bz_size_x][j] + Bz[i][j] + Bz[i][j-1] + Bz[Bz_size_x][j-1]) / 4.0;
+				else
+					B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
+
+				*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
+			}
 		}
 	}
 }
@@ -128,22 +143,19 @@ int main(int argc, char *argv[]) {
 	double t = 0.0;
 	int i = 0;
 
-	MPI_Datatype ey_column;
+	MPI_Datatype ex_column, ey_column, bz_column;
+	MPI_Type_vector(Ex_size_y, 1, 1, MPI_DOUBLE, &ex_column);
+	MPI_Type_commit(&ex_column);
 	MPI_Type_vector(Ey_size_y, 1, 1, MPI_DOUBLE, &ey_column);
 	MPI_Type_commit(&ey_column);
-	MPI_Datatype bz_column;
 	MPI_Type_vector(Bz_size_y, 1, 1, MPI_DOUBLE, &bz_column);
 	MPI_Type_commit(&bz_column);
-	int left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
-	int right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
-	int tag = 13;
+	left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
+	right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
 
 	while (i < steps) {
-		MPI_Sendrecv(Ey[0], 1, ey_column, left, tag, Ey[Ey_size_x-1], 1, ey_column, right, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		MPI_Barrier(MPI_COMM_WORLD);
-
 		apply_boundary();
-		update_fields();
+		update_fields(ex_column, ey_column, bz_column);
 		double global_E_mag, global_B_mag;
 		t += dt;
 
@@ -156,8 +168,8 @@ int main(int argc, char *argv[]) {
 			if (rank == 0)
 				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e in process %d\n", i, t, dt, global_E_mag, global_B_mag, rank);
 
-			if ((!no_output) && (enable_checkpoints) && rank == 0)
-				write_checkpoint(i);
+			// if ((!no_output) && (enable_checkpoints) && rank == 0)
+			// 	write_checkpoint(i);
 		}
 		i++;
 	}
