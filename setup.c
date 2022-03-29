@@ -45,7 +45,7 @@ void setup() {
  */
 void allocate_arrays() {
 	Ex_size_x = X; Ex_size_y = Y+1;
-	Ex = alloc_2d_array(Ex_size_x, Ex_size_y);
+	Ex = alloc_2d_array(Ex_size_x+1, Ex_size_y); // Adding ghsot column
 	Ey_size_x = X+1; Ey_size_y = Y;
 	Ey = alloc_2d_array(Ey_size_x, Ey_size_y);
 	

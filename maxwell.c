@@ -51,8 +51,8 @@ void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype 
 		}
 	}
 
-	// MPI_Barrier(MPI_COMM_WORLD);
-	// MPI_Sendrecv(Ex[Ex_size_x-1], 1, datatype1, right, 13, Ex[Ex_size_x], 1, datatype1, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Sendrecv(Ex[Ex_size_x-1], 1, datatype1, right, 13, Ex[Ex_size_x], 1, datatype1, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
 /**
@@ -82,18 +82,17 @@ void apply_boundary() {
 void resolve_to_grid(double *E_mag, double *B_mag) {
 	*E_mag = 0.0;
 	*B_mag = 0.0;
-
-	for (int i = 1; i < E_size_x-1; i++) {
-		for (int j = 1; j < E_size_y-1; j++) {
-			E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
-			E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
-			//E[i][j][2] = 0.0; // in 2D we don't care about this dimension
-
-			*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
-		}
-	}
 	
 	if (rank == 0) {
+		for (int i = 1; i < E_size_x-1; i++) {
+			for (int j = 1; j < E_size_y-1; j++) {
+				E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
+				E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
+
+				*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
+			}
+		}
+
 		for (int i = 1; i < B_size_x-1; i++) {
 			for (int j = 1; j < B_size_y-1; j++) {
 				B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
@@ -102,6 +101,21 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 			}
 		}
 	} else {
+		for (int i = 0; i < E_size_x-1; i++) {
+			for (int j = 1; j < E_size_y-1; j++) {
+				if (i == 0) {
+					E[i][j][0] = (Ex[Bz_size_x][j] + Ex[i][j]) / 2.0;
+					E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
+				}
+				else {
+					E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
+					E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
+				}
+
+				*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
+			}
+		}
+
 		for (int i = 0; i < B_size_x-1; i++) {
 			for (int j = 1; j < B_size_y-1; j++) {
 				if (i == 0)
