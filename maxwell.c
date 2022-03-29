@@ -158,14 +158,18 @@ int main(int argc, char *argv[]) {
 	int i = 0;
 
 	MPI_Datatype ex_column, ey_column, bz_column;
-	MPI_Type_vector(Ex_size_y, 1, 1, MPI_DOUBLE, &ex_column);
+	MPI_Type_vector(1, Ex_size_y, Ex_size_y, MPI_DOUBLE, &ex_column);
 	MPI_Type_commit(&ex_column);
-	MPI_Type_vector(Ey_size_y, 1, 1, MPI_DOUBLE, &ey_column);
+	MPI_Type_vector(1, Ey_size_y, Ey_size_y, MPI_DOUBLE, &ey_column);
 	MPI_Type_commit(&ey_column);
-	MPI_Type_vector(Bz_size_y, 1, 1, MPI_DOUBLE, &bz_column);
+	MPI_Type_vector(1, Bz_size_y, Bz_size_y, MPI_DOUBLE, &bz_column);
 	MPI_Type_commit(&bz_column);
 	left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
 	right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
+	
+	MPI_Datatype global_3d_grid;
+	MPI_Type_vector(E_size_x-1, E_size_z*E_size_y, E_size_z*E_size_y, MPI_DOUBLE, &global_3d_grid);
+	MPI_Type_commit(&global_3d_grid);
 
 	while (i < steps) {
 		apply_boundary();
@@ -180,10 +184,14 @@ int main(int argc, char *argv[]) {
 			MPI_Reduce(&E_mag, &global_E_mag, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			MPI_Reduce(&B_mag, &global_B_mag, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			if (rank == 0)
-				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e in process %d\n", i, t, dt, global_E_mag, global_B_mag, rank);
+				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
+			
+			MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
+			MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
+			MPI_Barrier(MPI_COMM_WORLD);
 
-			// if ((!no_output) && (enable_checkpoints) && rank == 0)
-			// 	write_checkpoint(i);
+			if ((!no_output) && (enable_checkpoints) && rank == 0)
+				write_checkpoint(i);
 		}
 		i++;
 	}

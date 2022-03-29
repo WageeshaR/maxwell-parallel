@@ -71,6 +71,8 @@ int write_vtk(char* filename) {
         perror("Error");
         return -1;
     }
+    int realX = X * size;
+    int realY = Y;
 
     // Write the VTK header information
     fprintf(f, "# vtk DataFile Version 3.0\n");
@@ -79,26 +81,26 @@ int write_vtk(char* filename) {
     fprintf(f, "DATASET RECTILINEAR_GRID\n");
 
     // Write out the grid information
-    fprintf(f, "DIMENSIONS %d %d 1\n", (X+1), (Y+1));
-    fprintf(f, "X_COORDINATES %d float\n", (X+1));
-    for (int i = 0; i <= X; i++) fprintf(f, "   %.12e", (lengthX * ((double) i / (X+1))));
-    fprintf(f, "\nY_COORDINATES %d float\n", (Y+1));
-    for (int i = 0; i <= Y; i++) fprintf(f, "   %.12e", (lengthY * ((double) i / (Y+1))));
+    fprintf(f, "DIMENSIONS %d %d 1\n", (realX+1), (realY+1));
+    fprintf(f, "X_COORDINATES %d float\n", (realX+1));
+    for (int i = 0; i <= realX; i++) fprintf(f, "   %.12e", (lengthX * ((double) i / (realX+1))));
+    fprintf(f, "\nY_COORDINATES %d float\n", (realY+1));
+    for (int i = 0; i <= realY; i++) fprintf(f, "   %.12e", (lengthY * ((double) i / (realY+1))));
     fprintf(f, "\nZ_COORDINATES 1 float\n");
     fprintf(f, "  0.000000000000e+00");
 
-    fprintf(f, "\nPOINT_DATA %d\n", ((X+1) * (Y+1)));
+    fprintf(f, "\nPOINT_DATA %d\n", ((realX+1) * (realY+1)));
 
     // Write out the E and B vector fields
     fprintf(f, "VECTORS E_field float\n");
-    for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++)
-            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
+    for (int j = 0; j <= realY; j++) {
+        for (int i = 0; i <= realX; i++)
+            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", global_E[i][j][0], global_E[i][j][1]);
     }
     fprintf(f, "VECTORS B_field float\n");
-    for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++)
-            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
+    for (int j = 0; j <= realY; j++) {
+        for (int i = 0; i <= realX; i++)
+            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", global_B[i][j][2]);
     }
 
     fclose(f);
