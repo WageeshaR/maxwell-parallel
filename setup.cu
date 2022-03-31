@@ -43,18 +43,20 @@ void setup() {
  */
 void allocate_arrays() {
 	Ex_size_x = X; Ex_size_y = Y+1;
-	Ex = alloc_2d_array(X, Y+1);
+	alloc_2d_cuda_array(X, Y+1, Ex);
 	Ey_size_x = X+1; Ey_size_y = Y;
-	Ey = alloc_2d_array(X+1, Y);
+	alloc_2d_cuda_array(X+1, Y, Ey);
 	
 	Bz_size_x = X; Bz_size_y = Y;
-	Bz = alloc_2d_array(X, Y);
+	alloc_2d_cuda_array(X, Y, Bz);
 	
 	E_size_x = X+1; E_size_y = Y+1; E_size_z = 3;
-	E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
+	alloc_3d_cuda_array(E_size_x, E_size_y, E_size_z, E);
+	host_E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
 
 	B_size_x = X+1; B_size_y = Y+1; B_size_z = 3;
-	B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
+	alloc_3d_cuda_array(B_size_x, B_size_y, B_size_z, B);
+	host_B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
 }
 
 /**
@@ -62,11 +64,13 @@ void allocate_arrays() {
  * 
  */
 void free_arrays() {
-	free_2d_array(Ex);
-	free_2d_array(Ey);
-	free_2d_array(Bz);
-	free_3d_array(E);
-	free_3d_array(B);
+	free_2d_cuda_array(Ex);
+	free_2d_cuda_array(Ey);
+	free_2d_cuda_array(Bz);
+	free_3d_cuda_array(E);
+	free_3d_cuda_array(B);
+	free_3d_array(host_E);
+	free_3d_array(host_B);
 }
 
 /**

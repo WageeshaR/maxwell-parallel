@@ -42,39 +42,79 @@ double ** Bz;
 // Resolved grids
 int E_size_x, E_size_y, E_size_z;
 double *** E;
+double *** host_E;
 int B_size_x, B_size_y, B_size_z;
 double *** B;
+double *** host_B;
 
 /**
- * @brief Allocate a 2D array that is addressable using square brackets
+ * @brief Allocate a 2D CUDA array that is addressable using square brackets
  * 
  * @param m The first dimension of the array
  * @param n The second dimension of the array
  * @return double** A 2D array
  */
-double **alloc_2d_array(int m, int n) {
-  	double **x;
+void alloc_2d_cuda_array(int m, int n, double **array) {
   	int i;
+	double *tmp_array;
 
-  	x = (double **)malloc(m*sizeof(double *));
-  	x[0] = (double *)calloc(m*n,sizeof(double));
+	tmp_array = (double *) calloc(m*n, sizeof(double));
+  	cudaMalloc(&array, m*sizeof(double *));
+  	cudaMemcpy(array[0], tmp_array, m*n*sizeof(double), cudaMemcpyHostToDevice);
   	for ( i = 1; i < m; i++ )
-    	x[i] = &x[0][i*n];
-	return x;
+    	array[i] = &array[0][i*n];
 }
 
 /**
- * @brief Free a 2D array
+ * @brief Free a 2D CUDA array
  * 
  * @param array The 2D array to free
  */
-void free_2d_array(double ** array) {
-	free(array[0]);
-	free(array);
+void free_2d_cuda_array(double ** array) {
+	cudaFree(array[0]);
+	cudaFree(array);
 }
 
 /**
- * @brief Allocate a 3D array that is addressable using square brackets
+ * @brief Allocate a 3D CUDA array that is addressable using square brackets
+ * 
+ * @param m The first dimension of the array
+ * @param n The second dimension of the array
+ * @param o The third dimension of the array
+ * @return double*** A 3D array
+ */
+void alloc_3d_cuda_array(int m, int n, int o, double ***array) {
+	double *tmp_array;
+
+	tmp_array = (double *) calloc(m*n*o, sizeof(double));
+	cudaMalloc(&array, m*sizeof(double **));
+	cudaMalloc(array[0], m*n*sizeof(double *));
+	cudaMemcpy(array[0][0], tmp_array, m*n*o*sizeof(double), cudaMemcpyHostToDevice);
+
+	for (int i = 1; i < m; i++) {
+		array[i] = &array[0][i*n];
+	}
+	for (int i = 0; i < m; i++) {
+		for (int j = 0; j < n; j++) {
+			if (i == 0 && j == 0) continue;
+			array[i][j] = &array[0][0][i*n*o + j*o];
+		}
+	}
+}
+
+/**
+ * @brief Free a 3D CUDA array
+ * 
+ * @param array The 3D array to free
+ */
+void free_3d_cuda_array(double*** array) {
+	cudaFree(array[0][0]);
+	cudaFree(array[0]);
+	cudaFree(array);
+}
+
+/**
+ * @brief Allocate a 3D C array that is addressable using square brackets
  * 
  * @param m The first dimension of the array
  * @param n The second dimension of the array
@@ -99,7 +139,7 @@ double ***alloc_3d_array(int m, int n, int o) {
 }
 
 /**
- * @brief Free a 3D array
+ * @brief Free a 3D C array
  * 
  * @param array The 3D array to free
  */

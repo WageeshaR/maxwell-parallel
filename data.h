@@ -55,11 +55,15 @@ extern double ** Bz;
 // These array are only needed for visualisation
 extern int E_size_x, E_size_y, E_size_z;
 extern double *** E;
+extern double *** host_E;
 extern int B_size_x, B_size_y, B_size_z;
 extern double *** B;
+extern double *** host_B;
 
-double **alloc_2d_array(int m, int n);
-void free_2d_array(double ** array);
+void alloc_2d_cuda_array(int m, int n, double **array);
+void free_2d_cuda_array(double ** array);
+void alloc_3d_cuda_array(int m, int n, int o, double ***array);
+void free_3d_cuda_array(double*** array);
 double ***alloc_3d_array(int m, int n, int o);
 void free_3d_array(double*** array);
 
