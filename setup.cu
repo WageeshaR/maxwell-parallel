@@ -12,11 +12,11 @@
  * 
  */
 void set_defaults() {
-	lengthX = 1.0;
-	lengthY = 1.0;
+	specifics.lengthX = 1.0;
+	specifics.lengthY = 1.0;
 
-	X = 4000;
-	Y = 4000;
+	specifics.X = 4000;
+	specifics.Y = 4000;
 	
 	T = 1.6e-9;
 
@@ -28,13 +28,13 @@ void set_defaults() {
  * 
  */
 void setup() {
-	dx = lengthX / X;
-	dy = lengthY / Y;
+	specifics.dx = specifics.lengthX / specifics.X;
+	specifics.dy = specifics.lengthY / specifics.Y;
 
-	dt = cfl * (dx > dy ? dx : dy) / c;
+	specifics.dt = constants.cfl * (specifics.dx > specifics.dy ? specifics.dx : specifics.dy) / constants.c;
 	
 	if (steps == 0) // only set this if steps hasn't been specified
-		steps = (int) (T / dt);
+		steps = (int) (T / specifics.dt);
 }
 
 /**
@@ -42,21 +42,21 @@ void setup() {
  * 
  */
 void allocate_arrays() {
-	Ex_size_x = X; Ex_size_y = Y+1;
-	alloc_2d_cuda_array(X, Y+1, Ex);
-	Ey_size_x = X+1; Ey_size_y = Y;
-	alloc_2d_cuda_array(X+1, Y, Ey);
+	arrays.Ex_size_x = specifics.X; arrays.Ex_size_y = specifics.Y+1;
+	alloc_2d_cuda_array(specifics.X, specifics.Y+1, arrays.Ex, arrays.ex_pitch);
+	// arrays.Ey_size_x = specifics.X+1; arrays.Ey_size_y = specifics.Y;
+	// alloc_2d_cuda_array(specifics.X+1, specifics.Y, arrays.Ey);
 	
-	Bz_size_x = X; Bz_size_y = Y;
-	alloc_2d_cuda_array(X, Y, Bz);
+	// arrays.Bz_size_x = specifics.X; arrays.Bz_size_y = specifics.Y;
+	// alloc_2d_cuda_array(specifics.X, specifics.Y, arrays.Bz);
 	
-	E_size_x = X+1; E_size_y = Y+1; E_size_z = 3;
-	alloc_3d_cuda_array(E_size_x, E_size_y, E_size_z, E);
-	host_E = alloc_3d_array(E_size_x, E_size_y, E_size_z);
+	// arrays.E_size_x = specifics.X+1; arrays.E_size_y = specifics.Y+1; arrays.E_size_z = 3;
+	// alloc_3d_cuda_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z, arrays.E);
+	// host_E = alloc_3d_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z);
 
-	B_size_x = X+1; B_size_y = Y+1; B_size_z = 3;
-	alloc_3d_cuda_array(B_size_x, B_size_y, B_size_z, B);
-	host_B = alloc_3d_array(B_size_x, B_size_y, B_size_z);
+	// arrays.B_size_x = specifics.X+1; arrays.B_size_y = specifics.Y+1; arrays.B_size_z = 3;
+	// alloc_3d_cuda_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z, arrays.B);
+	// host_B = alloc_3d_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z);
 }
 
 /**
@@ -64,11 +64,11 @@ void allocate_arrays() {
  * 
  */
 void free_arrays() {
-	free_2d_cuda_array(Ex);
-	free_2d_cuda_array(Ey);
-	free_2d_cuda_array(Bz);
-	free_3d_cuda_array(E);
-	free_3d_cuda_array(B);
+	free_2d_cuda_array(arrays.Ex);
+	free_2d_cuda_array(arrays.Ey);
+	free_2d_cuda_array(arrays.Bz);
+	free_3d_cuda_array(arrays.E);
+	free_3d_cuda_array(arrays.B);
 	free_3d_array(host_E);
 	free_3d_array(host_B);
 }
@@ -77,33 +77,34 @@ void free_arrays() {
  * @brief Set up a guassian to curve around the centre
  * 
  */
-void problem_set_up() {
-    for (int i = 0; i < Ex_size_x; i++ ) {
-        for (int j = 0; j < Ex_size_y; j++) {
-            double xcen = lengthX / 2.0;
-            double ycen = lengthY / 2.0;
-            double xcoord = (i - xcen) * dx;
-            double ycoord = j * dy;
+__global__ void problem_set_up(Arrays arrays, Specifics specifics) {
+	printf("Running\n");
+    for (int i = 0; i < arrays.Ex_size_x; i++ ) {
+        for (int j = 0; j < arrays.Ex_size_y; j++) {
+            double xcen = specifics.lengthX / 2.0;
+            double ycen = specifics.lengthY / 2.0;
+            double xcoord = (i - xcen) * specifics.dx;
+            double ycoord = j * specifics.dy;
             double rx = xcen - xcoord;
             double ry = ycen - ycoord;
             double rlen = sqrt(rx*rx + ry*ry);
 			double tx = (rlen == 0) ? 0 : ry / rlen;
-            double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
-            Ex[i][j] = mag * tx;
+            double mag = exp(-400.0 * (rlen - (specifics.lengthX / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
+            // arrays.Ex[i][j] = mag * tx;
 		}
 	}
-    for (int i = 0; i < Ey_size_x; i++ ) {
-        for (int j = 0; j < Ey_size_y; j++) {
-            double xcen = lengthX / 2.0;
-            double ycen = lengthY / 2.0;
-            double xcoord = i * dx;
-            double ycoord = (j - ycen) * dy;
+    for (int i = 0; i < arrays.Ey_size_x; i++ ) {
+        for (int j = 0; j < arrays.Ey_size_y; j++) {
+            double xcen = specifics.lengthX / 2.0;
+            double ycen = specifics.lengthY / 2.0;
+            double xcoord = i * specifics.dx;
+            double ycoord = (j - ycen) * specifics.dy;
             double rx = xcen - xcoord;
             double ry = ycen - ycoord;
             double rlen = sqrt(rx*rx + ry*ry);
             double ty = (rlen == 0) ? 0 : -rx / rlen;
-			double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
-            Ey[i][j] = mag * ty;
+			double mag = exp(-400.0 * (rlen - (specifics.lengthY / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
+            // arrays.Ey[i][j] = mag * ty;
 		}
 	}
 }

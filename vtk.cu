@@ -79,26 +79,26 @@ int write_vtk(char* filename) {
     fprintf(f, "DATASET RECTILINEAR_GRID\n");
 
     // Write out the grid information
-    fprintf(f, "DIMENSIONS %d %d 1\n", (X+1), (Y+1));
-    fprintf(f, "X_COORDINATES %d float\n", (X+1));
-    for (int i = 0; i <= X; i++) fprintf(f, "   %.12e", (lengthX * ((double) i / (X+1))));
-    fprintf(f, "\nY_COORDINATES %d float\n", (Y+1));
-    for (int i = 0; i <= Y; i++) fprintf(f, "   %.12e", (lengthY * ((double) i / (Y+1))));
+    fprintf(f, "DIMENSIONS %d %d 1\n", (specifics.X+1), (specifics.Y+1));
+    fprintf(f, "X_COORDINATES %d float\n", (specifics.X+1));
+    for (int i = 0; i <= specifics.X; i++) fprintf(f, "   %.12e", (specifics.lengthX * ((double) i / (specifics.X+1))));
+    fprintf(f, "\nY_COORDINATES %d float\n", (specifics.Y+1));
+    for (int i = 0; i <= specifics.Y; i++) fprintf(f, "   %.12e", (specifics.lengthY * ((double) i / (specifics.Y+1))));
     fprintf(f, "\nZ_COORDINATES 1 float\n");
     fprintf(f, "  0.000000000000e+00");
 
-    fprintf(f, "\nPOINT_DATA %d\n", ((X+1) * (Y+1)));
+    fprintf(f, "\nPOINT_DATA %d\n", ((specifics.X+1) * (specifics.Y+1)));
 
     // Write out the E and B vector fields
     fprintf(f, "VECTORS E_field float\n");
-    for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++)
-            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
+    for (int j = 0; j <= specifics.Y; j++) {
+        for (int i = 0; i <= specifics.X; i++)
+            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", host_E[i][j][0], host_E[i][j][1]);
     }
     fprintf(f, "VECTORS B_field float\n");
-    for (int j = 0; j <= Y; j++) {
-        for (int i = 0; i <= X; i++)
-            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
+    for (int j = 0; j <= specifics.Y; j++) {
+        for (int i = 0; i <= specifics.X; i++)
+            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", host_B[i][j][2]);
     }
 
     fclose(f);

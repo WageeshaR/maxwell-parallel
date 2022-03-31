@@ -68,10 +68,10 @@ void parse_args(int argc, char *argv[]) {
 	while ((c = getopt_long(argc, argv, "x:y:n:t:f:do:cvh", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 'x':
-				X = atoi(optarg);
+				specifics.X = atoi(optarg);
 				break;
 			case 'y':
-				Y = atoi(optarg);
+				specifics.Y = atoi(optarg);
 				break;
 			case 'n':
 				n_specified = 1;
@@ -117,8 +117,8 @@ void print_opts() {
     printf("=======================================\n");
     printf("Started with the following options\n");
     printf("=======================================\n");
-    printf("  lengthX            = %14lf\n", lengthX);
-    printf("  lengthY            = %14lf\n", lengthY);
+    printf("  lengthX            = %14lf\n", specifics.lengthX);
+    printf("  lengthY            = %14lf\n", specifics.lengthY);
 	printf("  steps              = %14d\n", steps);
 	printf("  output_freq        = %14d\n", output_freq);
     printf("  T                  = %14.12lf\n", T);

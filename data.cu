@@ -6,46 +6,22 @@
 #include "vtk.h"
 #include "data.h"
 
-const double c = 299792458; // Speed of light
-const double mu = 4.0 * M_PI * 1.0e-7; // permiability of free space
-const double eps = 1.0 / (c * c * mu); // permitivitty of free space
+struct Constants constants = {
+	.c = 299792458,
+	.mu = 4.0 * M_PI * 1.0e-7,
+	.eps = 1.0 / (constants.c * constants.c * constants.mu),
+	.cfl = 0.6363961031
+};
 
-// must be less than 1/sqrt(2) in 2D
-//const double cfl = 0.9 / sqrt(2);
-const double cfl = 0.6363961031;
+struct Specifics specifics;
+struct Arrays arrays;
 
-// Grid size in metres
-double lengthX;
-double lengthY;
-
-// Discretisation in cells
-int X;
-int Y;
-
-// dx, dy, dt constants.
-double dx;
-double dy;
-double dt = 0.0;
+double *** host_E;
+double *** host_B;
 
 // Time to run for / or number of steps
 double T = 0.0001;
 int steps = 0;
-
-// Grids used for Yee grid computation
-int Ex_size_x, Ex_size_y;
-double ** Ex;
-int Ey_size_x, Ey_size_y;
-double ** Ey;
-int Bz_size_x, Bz_size_y;
-double ** Bz;
-
-// Resolved grids
-int E_size_x, E_size_y, E_size_z;
-double *** E;
-double *** host_E;
-int B_size_x, B_size_y, B_size_z;
-double *** B;
-double *** host_B;
 
 /**
  * @brief Allocate a 2D CUDA array that is addressable using square brackets
@@ -54,15 +30,9 @@ double *** host_B;
  * @param n The second dimension of the array
  * @return double** A 2D array
  */
-void alloc_2d_cuda_array(int m, int n, double **array) {
-  	int i;
-	double *tmp_array;
-
-	tmp_array = (double *) calloc(m*n, sizeof(double));
-  	cudaMalloc(&array, m*sizeof(double *));
-  	cudaMemcpy(array[0], tmp_array, m*n*sizeof(double), cudaMemcpyHostToDevice);
-  	for ( i = 1; i < m; i++ )
-    	array[i] = &array[0][i*n];
+void alloc_2d_cuda_array(int m, int n, double *array, size_t pitch) {
+  	cudaMallocPitch(&array, &pitch, n*sizeof(double), m); // Setting width in Y direction
+	cudaMemset(array, 0, pitch*m);
 }
 
 /**
@@ -70,8 +40,7 @@ void alloc_2d_cuda_array(int m, int n, double **array) {
  * 
  * @param array The 2D array to free
  */
-void free_2d_cuda_array(double ** array) {
-	cudaFree(array[0]);
+void free_2d_cuda_array(double *array) {
 	cudaFree(array);
 }
 
@@ -83,23 +52,9 @@ void free_2d_cuda_array(double ** array) {
  * @param o The third dimension of the array
  * @return double*** A 3D array
  */
-void alloc_3d_cuda_array(int m, int n, int o, double ***array) {
-	double *tmp_array;
-
-	tmp_array = (double *) calloc(m*n*o, sizeof(double));
-	cudaMalloc(&array, m*sizeof(double **));
-	cudaMalloc(array[0], m*n*sizeof(double *));
-	cudaMemcpy(array[0][0], tmp_array, m*n*o*sizeof(double), cudaMemcpyHostToDevice);
-
-	for (int i = 1; i < m; i++) {
-		array[i] = &array[0][i*n];
-	}
-	for (int i = 0; i < m; i++) {
-		for (int j = 0; j < n; j++) {
-			if (i == 0 && j == 0) continue;
-			array[i][j] = &array[0][0][i*n*o + j*o];
-		}
-	}
+void alloc_3d_cuda_array(int m, int n, int o, double *array, size_t* pitch) {
+	cudaMallocPitch(&array, pitch, n*o*sizeof(double), m); // Setting width in Y direction multiplied by depth
+	cudaMemset(array, 0.0, (*pitch)*m);
 }
 
 /**
@@ -107,9 +62,7 @@ void alloc_3d_cuda_array(int m, int n, int o, double ***array) {
  * 
  * @param array The 3D array to free
  */
-void free_3d_cuda_array(double*** array) {
-	cudaFree(array[0][0]);
-	cudaFree(array[0]);
+void free_3d_cuda_array(double* array) {
 	cudaFree(array);
 }
 

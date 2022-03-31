@@ -1,29 +1,48 @@
 #ifndef DATA_H
 #define DATA_H
 
-extern const double c; // Speed of light
-extern const double mu; // permiability of free space
-extern const double eps; // permitivitty of free space
+struct Constants {
+    const double c;
+    const double mu;
+    const double eps;
+    const double cfl;
+};
 
-// must be less than 1/sqrt(2) in 2D
-extern const double cfl;
+struct Specifics {
+    double lengthX;
+    double lengthY;
+    int X;
+    int Y;
+    double dx;
+    double dy;
+    double dt;
+};
 
-// Grid size in metres
-extern double lengthX;
-extern double lengthY;
+struct Arrays {
+    int Ex_size_x, Ex_size_y;
+    double * Ex;
+    size_t ex_pitch;
+    int Ey_size_x, Ey_size_y;
+    double * Ey;
+    size_t ey_pitch;
+    int Bz_size_x, Bz_size_y;
+    double * Bz;
+    size_t bz_pitch;
+    int E_size_x, E_size_y, E_size_z;
+    double * E;
+    size_t e_pitch;
+    int B_size_x, B_size_y, B_size_z;
+    double * B;
+    size_t b_pitch;
+};
 
-// Discretisation in cells
-extern int X;
-extern int Y;
+extern struct Constants constants;
+extern struct Specifics specifics;
+extern struct Arrays arrays;
 
-// dx, dy, dt constants.
-extern double dx;
-extern double dy;
-extern double dt;
-
-// Time to run for / or number of steps
 extern double T;
 extern int steps;
+
 
 // x = Ex values
 // o = Ey values
@@ -45,25 +64,13 @@ extern int steps;
 //    +---x---+---x---+---x---+---x---+---x---+
 //(0,0)  x -> 
 
-extern int Ex_size_x, Ex_size_y;
-extern double ** Ex;
-extern int Ey_size_x, Ey_size_y;
-extern double ** Ey;
-extern int Bz_size_x, Bz_size_y;
-extern double ** Bz;
-
-// These array are only needed for visualisation
-extern int E_size_x, E_size_y, E_size_z;
-extern double *** E;
 extern double *** host_E;
-extern int B_size_x, B_size_y, B_size_z;
-extern double *** B;
 extern double *** host_B;
 
-void alloc_2d_cuda_array(int m, int n, double **array);
-void free_2d_cuda_array(double ** array);
-void alloc_3d_cuda_array(int m, int n, int o, double ***array);
-void free_3d_cuda_array(double*** array);
+void alloc_2d_cuda_array(int m, int n, double *array, size_t pitch);
+void free_2d_cuda_array(double *array);
+void alloc_3d_cuda_array(int m, int n, int o, double *array, size_t *pitch);
+void free_3d_cuda_array(double *array);
 double ***alloc_3d_array(int m, int n, int o);
 void free_3d_array(double*** array);
 

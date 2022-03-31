@@ -12,41 +12,41 @@
  * @brief Update the magnetic and electric fields. The magnetic fields are updated for a half-time-step. The electric fields are updated for a full time-step.
  * 
  */
-void update_fields() {
-	for (int i = 0; i < Bz_size_x; i++) {
-		for (int j = 0; j < Bz_size_y; j++) {
-			Bz[i][j] = Bz[i][j] - (dt / dx) * (Ey[i+1][j] - Ey[i][j])
-				                + (dt / dy) * (Ex[i][j+1] - Ex[i][j]);
-		}
-	}
+__global__ void update_fields(Constants constants, Specifics specifics, Arrays arrays) {
+	// for (int i = 0; i < arrays.Bz_size_x; i++) {
+	// 	for (int j = 0; j < arrays.Bz_size_y; j++) {
+	// 		arrays.Bz[i][j] = arrays.Bz[i][j] - (specifics.dt / specifics.dx) * (arrays.Ey[i+1][j] - arrays.Ey[i][j])
+	// 			                + (specifics.dt / specifics.dy) * (arrays.Ex[i][j+1] - arrays.Ex[i][j]);
+	// 	}
+	// }
 
-	for (int i = 0; i < Ex_size_x; i++) {
-		for (int j = 1; j < Ex_size_y-1; j++) {
-			Ex[i][j] = Ex[i][j] + (dt / (dy * eps * mu)) * (Bz[i][j] - Bz[i][j-1]);
-		}
-	}
+	// for (int i = 0; i < arrays.Ex_size_x; i++) {
+	// 	for (int j = 1; j < arrays.Ex_size_y-1; j++) {
+	// 		arrays.Ex[i][j] = arrays.Ex[i][j] + (specifics.dt / (specifics.dy * constants.eps * constants.mu)) * (arrays.Bz[i][j] - arrays.Bz[i][j-1]);
+	// 	}
+	// }
 
-	for (int i = 1; i < Ey_size_x-1; i++) {
-		for (int j = 0; j < Ey_size_y; j++) {
-			Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
-		}
-	}
+	// for (int i = 1; i < arrays.Ey_size_x-1; i++) {
+	// 	for (int j = 0; j < arrays.Ey_size_y; j++) {
+	// 		arrays.Ey[i][j] = arrays.Ey[i][j] - (specifics.dt / (specifics.dx * constants.eps * constants.mu)) * (arrays.Bz[i][j] - arrays.Bz[i-1][j]);
+	// 	}
+	// }
 }
 
 /**
  * @brief Apply boundary conditions
  * 
  */
-void apply_boundary() {
-	for (int i = 0; i < Ex_size_x; i++) {
-		Ex[i][0] = -Ex[i][1];
-		Ex[i][Ex_size_y-1] = -Ex[i][Ex_size_y-2];
-	}
+__global__ void apply_boundary(Arrays arrays) {
+	// for (int i = 0; i < arrays.Ex_size_x; i++) {
+	// 	arrays.Ex[i][0] = -arrays.Ex[i][1];
+	// 	arrays.Ex[i][arrays.Ex_size_y-1] = -arrays.Ex[i][arrays.Ex_size_y-2];
+	// }
 
-	for (int j = 0; j < Ey_size_y; j++) {
-		Ey[0][j] = -Ey[1][j];
-		Ey[Ey_size_x-1][j] = -Ey[Ey_size_x-2][j];
-	}
+	// for (int j = 0; j < arrays.Ey_size_y; j++) {
+	// 	arrays.Ey[0][j] = -arrays.Ey[1][j];
+	// 	arrays.Ey[arrays.Ey_size_x-1][j] = -arrays.Ey[arrays.Ey_size_x-2][j];
+	// }
 }
 
 /**
@@ -55,29 +55,29 @@ void apply_boundary() {
  * @param E_mag The returned total magnitude of the Electric field (E)
  * @param B_mag The returned total magnitude of the Magnetic field (B) 
  */
-void resolve_to_grid(double *E_mag, double *B_mag) {
-	*E_mag = 0.0;
-	*B_mag = 0.0;
+__global__ void resolve_to_grid(double *E_mag, double *B_mag, Arrays arrays) {
+	// *E_mag = 0.0;
+	// *B_mag = 0.0;
 
-	for (int i = 1; i < E_size_x-1; i++) {
-		for (int j = 1; j < E_size_y-1; j++) {
-			E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
-			E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
-			//E[i][j][2] = 0.0; // in 2D we don't care about this dimension
+	// for (int i = 1; i < arrays.E_size_x-1; i++) {
+	// 	for (int j = 1; j < arrays.E_size_y-1; j++) {
+	// 		arrays.E[i][j][0] = (arrays.Ex[i-1][j] + arrays.Ex[i][j]) / 2.0;
+	// 		arrays.E[i][j][1] = (arrays.Ey[i][j-1] + arrays.Ey[i][j]) / 2.0;
+	// 		//E[i][j][2] = 0.0; // in 2D we don't care about this dimension
 
-			*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
-		}
-	}
+	// 		*E_mag += sqrt((arrays.E[i][j][0] * arrays.E[i][j][0]) + (arrays.E[i][j][1] * arrays.E[i][j][1]));
+	// 	}
+	// }
 	
-	for (int i = 1; i < B_size_x-1; i++) {
-		for (int j = 1; j < B_size_y-1; j++) {
-			//B[i][j][0] = 0.0; // in 2D we don't care about these dimensions
-			//B[i][j][1] = 0.0;
-			B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
+	// for (int i = 1; i < arrays.B_size_x-1; i++) {
+	// 	for (int j = 1; j < arrays.B_size_y-1; j++) {
+	// 		//B[i][j][0] = 0.0; // in 2D we don't care about these dimensions
+	// 		//B[i][j][1] = 0.0;
+	// 		arrays.B[i][j][2] = (arrays.Bz[i-1][j] + arrays.Bz[i][j] + arrays.Bz[i][j-1] + arrays.Bz[i-1][j-1]) / 4.0;
 
-			*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
-		}
-	}
+	// 		*B_mag += sqrt(arrays.B[i][j][2] * arrays.B[i][j][2]);
+	// 	}
+	// }
 }
 
 /**
@@ -92,45 +92,46 @@ int main(int argc, char *argv[]) {
 	parse_args(argc, argv);
 	setup();
 
-	printf("Running problem size %f x %f on a %d x %d grid.\n", lengthX, lengthY, X, Y);
+	printf("Running problem size %f x %f on a %d x %d grid.\n", specifics.lengthX, specifics.lengthY, specifics.X, specifics.Y);
 	
 	if (verbose) print_opts();
 	
 	allocate_arrays();
 
-	problem_set_up();
+	problem_set_up<<<1,1>>>(arrays, specifics);
+	cudaDeviceSynchronize();
 
 	// start at time 0
 	double t = 0.0;
 	int i = 0;
 	while (i < steps) {
-		apply_boundary();
-		update_fields();
+		// apply_boundary(arrays);
+		// update_fields(constants, specifics, arrays);
 
-		t += dt;
+		t += specifics.dt;
 
-		if (i % output_freq == 0) {
-			double E_mag, B_mag;
-			resolve_to_grid(&E_mag, &B_mag);
-			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+		// if (i % output_freq == 0) {
+		// 	double E_mag, B_mag;
+		// 	resolve_to_grid(&E_mag, &B_mag, arrays);
+		// 	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 
-			if ((!no_output) && (enable_checkpoints))
-				write_checkpoint(i);
-		}
+		// 	if ((!no_output) && (enable_checkpoints))
+		// 		write_checkpoint(i);
+		// }
 
 		i++;
 	}
 
-	double E_mag, B_mag;
-	resolve_to_grid(&E_mag, &B_mag);
+	// double E_mag, B_mag;
+	// resolve_to_grid(&E_mag, &B_mag, arrays);
 
-	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+	// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
 
-	if (!no_output) 
-		write_result();
+	// if (!no_output) 
+	// 	write_result();
 
-	free_arrays();
+	// free_arrays();
 
 	exit(0);
 }
