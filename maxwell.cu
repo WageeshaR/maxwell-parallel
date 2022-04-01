@@ -16,7 +16,7 @@ __global__ void update_fields(Constants constants, Specifics specifics, Arrays a
 	int tidx = blockIdx.x*blockDim.x + threadIdx.x;
 	int tidy = blockIdx.y*blockDim.y + threadIdx.y;
 	int cpx_ex = arrays.Ex_size_x / (gridDim.x * blockDim.x); // Cells per cuda thread in X direction (keeping this same for all fields)
-	int cpy_ey = arrays.Ey_size_y / (gridDim.y * gridDim.y); // Cells per cuda thread in Y direction
+	int cpy_ey = arrays.Ey_size_y / (gridDim.y * blockDim.y); // Cells per cuda thread in Y direction
 
 	for (int i = cpx_ex * tidx; i < cpx_ex * (tidx + 1); i++) {
 		for (int j = cpy_ey * tidy; j < cpy_ey * (tidy + 1); j++) {
@@ -53,7 +53,7 @@ __global__ void apply_boundary(Arrays arrays) {
 	int tidx = blockIdx.x*blockDim.x + threadIdx.x;
 	int tidy = blockIdx.y*blockDim.y + threadIdx.y;
 	int cpx_ex = arrays.Ex_size_x / (gridDim.x * blockDim.x); // Cells per cuda thread in X direction
-	int cpy_ey = arrays.Ey_size_y / (gridDim.y * gridDim.y); // Cells per cuda thread in Y direction
+	int cpy_ey = arrays.Ey_size_y / (gridDim.y * blockDim.y); // Cells per cuda thread in Y direction
 	
 	for (int i = tidx * cpx_ex; i < cpx_ex * (tidx + 1); i++) {
 		if (tidy == 0) {
@@ -127,8 +127,8 @@ int main(int argc, char *argv[]) {
 	if (verbose) print_opts();
 	
 	allocate_arrays();
-	dim3 blockShape = dim3(2,1);
-	dim3 gridShape = dim3(2,1);
+	dim3 blockShape = dim3(10,10);
+	dim3 gridShape = dim3(5,5);
 	int total_threads = gridShape.x * blockShape.x * gridShape.y * blockShape.y;
 	problem_set_up<<<1,1>>>(arrays, specifics);
 	double *E_mag_vec = (double *) calloc(total_threads, sizeof(double));
