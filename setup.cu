@@ -43,20 +43,20 @@ void setup() {
  */
 void allocate_arrays() {
 	arrays.Ex_size_x = specifics.X; arrays.Ex_size_y = specifics.Y+1;
-	alloc_2d_cuda_array(specifics.X, specifics.Y+1, arrays.Ex, arrays.ex_pitch);
-	// arrays.Ey_size_x = specifics.X+1; arrays.Ey_size_y = specifics.Y;
-	// alloc_2d_cuda_array(specifics.X+1, specifics.Y, arrays.Ey);
+	alloc_2d_cuda_array(specifics.X, specifics.Y+1, &arrays.Ex);
+	arrays.Ey_size_x = specifics.X+1; arrays.Ey_size_y = specifics.Y;
+	alloc_2d_cuda_array(specifics.X+1, specifics.Y, &arrays.Ey);
 	
-	// arrays.Bz_size_x = specifics.X; arrays.Bz_size_y = specifics.Y;
-	// alloc_2d_cuda_array(specifics.X, specifics.Y, arrays.Bz);
+	arrays.Bz_size_x = specifics.X; arrays.Bz_size_y = specifics.Y;
+	alloc_2d_cuda_array(specifics.X, specifics.Y, &arrays.Bz);
 	
-	// arrays.E_size_x = specifics.X+1; arrays.E_size_y = specifics.Y+1; arrays.E_size_z = 3;
-	// alloc_3d_cuda_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z, arrays.E);
-	// host_E = alloc_3d_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z);
+	arrays.E_size_x = specifics.X+1; arrays.E_size_y = specifics.Y+1; arrays.E_size_z = 3;
+	alloc_3d_cuda_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z, &arrays.E);
+	host_E = alloc_3d_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z);
 
-	// arrays.B_size_x = specifics.X+1; arrays.B_size_y = specifics.Y+1; arrays.B_size_z = 3;
-	// alloc_3d_cuda_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z, arrays.B);
-	// host_B = alloc_3d_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z);
+	arrays.B_size_x = specifics.X+1; arrays.B_size_y = specifics.Y+1; arrays.B_size_z = 3;
+	alloc_3d_cuda_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z, &arrays.B);
+	host_B = alloc_3d_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z);
 }
 
 /**
@@ -78,25 +78,24 @@ void free_arrays() {
  * 
  */
 __global__ void problem_set_up(Arrays arrays, Specifics specifics) {
-	printf("Running\n");
+	double xcen = specifics.lengthX / 2.0;
+	double ycen = specifics.lengthY / 2.0;
+
+
     for (int i = 0; i < arrays.Ex_size_x; i++ ) {
         for (int j = 0; j < arrays.Ex_size_y; j++) {
-            double xcen = specifics.lengthX / 2.0;
-            double ycen = specifics.lengthY / 2.0;
-            double xcoord = (i - xcen) * specifics.dx;
-            double ycoord = j * specifics.dy;
-            double rx = xcen - xcoord;
-            double ry = ycen - ycoord;
-            double rlen = sqrt(rx*rx + ry*ry);
+			double xcoord = (i - xcen) * specifics.dx;
+			double ycoord = j * specifics.dy;
+			double rx = xcen - xcoord;
+			double ry = ycen - ycoord;
+			double rlen = sqrt(rx*rx + ry*ry);
 			double tx = (rlen == 0) ? 0 : ry / rlen;
-            double mag = exp(-400.0 * (rlen - (specifics.lengthX / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
-            // arrays.Ex[i][j] = mag * tx;
+			double mag = exp(-400.0 * (rlen - (specifics.lengthX / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
+			arrays.Ex[i * arrays.Ex_size_y + j] = mag * tx;
 		}
 	}
     for (int i = 0; i < arrays.Ey_size_x; i++ ) {
         for (int j = 0; j < arrays.Ey_size_y; j++) {
-            double xcen = specifics.lengthX / 2.0;
-            double ycen = specifics.lengthY / 2.0;
             double xcoord = i * specifics.dx;
             double ycoord = (j - ycen) * specifics.dy;
             double rx = xcen - xcoord;
@@ -104,7 +103,7 @@ __global__ void problem_set_up(Arrays arrays, Specifics specifics) {
             double rlen = sqrt(rx*rx + ry*ry);
             double ty = (rlen == 0) ? 0 : -rx / rlen;
 			double mag = exp(-400.0 * (rlen - (specifics.lengthY / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
-            // arrays.Ey[i][j] = mag * ty;
+            arrays.Ey[i*arrays.Ey_size_y + j] = mag * ty;
 		}
 	}
 }

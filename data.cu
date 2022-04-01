@@ -30,9 +30,10 @@ int steps = 0;
  * @param n The second dimension of the array
  * @return double** A 2D array
  */
-void alloc_2d_cuda_array(int m, int n, double *array, size_t pitch) {
-  	cudaMallocPitch(&array, &pitch, n*sizeof(double), m); // Setting width in Y direction
-	cudaMemset(array, 0, pitch*m);
+void alloc_2d_cuda_array(int m, int n, double **array) {
+	double *tmp = (double *) calloc(n*m, sizeof(double));
+  	cudaMalloc((void **)array, n*m*sizeof(double));
+	cudaMemcpy(*array, tmp, n*m*sizeof(double), cudaMemcpyHostToDevice);
 }
 
 /**
@@ -52,9 +53,10 @@ void free_2d_cuda_array(double *array) {
  * @param o The third dimension of the array
  * @return double*** A 3D array
  */
-void alloc_3d_cuda_array(int m, int n, int o, double *array, size_t* pitch) {
-	cudaMallocPitch(&array, pitch, n*o*sizeof(double), m); // Setting width in Y direction multiplied by depth
-	cudaMemset(array, 0.0, (*pitch)*m);
+void alloc_3d_cuda_array(int m, int n, int o, double **array) {
+	double *tmp = (double *) calloc(n*m*o, sizeof(double));
+	cudaMalloc((void **)array, n*m*o*sizeof(double));
+	cudaMemcpy(*array, tmp, n*m*o*sizeof(double), cudaMemcpyHostToDevice);
 }
 
 /**
