@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
 	double *d_E_mag_vec, *d_B_mag_vec;
 	cudaMalloc(&d_E_mag_vec, total_threads * sizeof(double));
 	cudaMalloc(&d_B_mag_vec, total_threads * sizeof(double));
-	long e_pitch_host = (long) arrays.E_size_y * arrays.E_size_z * sizeof(double);
-	long b_pitch_host = (long) arrays.B_size_y * arrays.B_size_z * sizeof(double);
+	long e_pitch_host = arrays.E_size_y * arrays.E_size_z * sizeof(double);
+	long b_pitch_host = arrays.B_size_y * arrays.B_size_z * sizeof(double);
 
 	// start at time 0
 	double t = 0.0;
@@ -160,8 +160,8 @@ int main(int argc, char *argv[]) {
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 
 			if ((!no_output) && (enable_checkpoints)) {
-				cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch, e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
-				cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch, b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
+				cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch * sizeof(double), e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
+				cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch * sizeof(double), b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
 				write_checkpoint(i);
 			}
 		}
@@ -180,10 +180,13 @@ int main(int argc, char *argv[]) {
 	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
 
-	// if (!no_output) 
-	// 	write_result();
+	if (!no_output) {
+		cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch * sizeof(double), e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
+		cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch * sizeof(double), b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
+		write_result();
+	}
 
-	// free_arrays();
+	free_arrays();
 
 	exit(0);
 }
