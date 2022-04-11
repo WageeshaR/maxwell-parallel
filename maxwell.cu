@@ -127,8 +127,8 @@ int main(int argc, char *argv[]) {
 	if (verbose) print_opts();
 	
 	allocate_arrays();
-	dim3 blockShape = dim3(10,10);
-	dim3 gridShape = dim3(5,5);
+	dim3 blockShape = dim3(cuda_consts.block_x,cuda_consts.block_y);
+	dim3 gridShape = dim3(cuda_consts.grid_x,cuda_consts.grid_y);
 	int total_threads = gridShape.x * blockShape.x * gridShape.y * blockShape.y;
 	problem_set_up<<<1,1>>>(arrays, specifics);
 	double *E_mag_vec = (double *) calloc(total_threads, sizeof(double));
@@ -158,10 +158,10 @@ int main(int argc, char *argv[]) {
 			}
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 
-			if ((!no_output) && (enable_checkpoints)) {
-				cudaMemcpy(&host_E[0][0][0], arrays.E, arrays.E_size_x * arrays.E_size_y * arrays.E_size_z * sizeof(double), cudaMemcpyDeviceToHost);
-				write_checkpoint(i);
-			}
+			// if ((!no_output) && (enable_checkpoints)) {
+			// 	cudaMemcpy(&host_E[0][0][0], arrays.E, arrays.E_size_x * arrays.E_size_y * arrays.E_size_z * sizeof(double), cudaMemcpyDeviceToHost);
+			// 	write_checkpoint(i);
+			// }
 		}
 
 		i++;

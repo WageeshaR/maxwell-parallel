@@ -38,9 +38,17 @@ struct Arrays {
     size_t b_pitch;
 };
 
+struct Cuda {
+    int grid_x;
+    int grid_y;
+    int block_x;
+    int block_y;
+};
+
 extern struct Constants constants;
 extern struct Specifics specifics;
 extern struct Arrays arrays;
+extern struct Cuda cuda_consts;
 
 extern double T;
 extern int steps;

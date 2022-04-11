@@ -15,6 +15,7 @@ struct Constants constants = {
 
 struct Specifics specifics;
 struct Arrays arrays;
+struct Cuda cuda_consts;
 
 double *** host_E;
 double *** host_B;

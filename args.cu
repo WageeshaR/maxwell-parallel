@@ -25,6 +25,10 @@ static struct option long_options[] = {
 	{"checkpoint", no_argument,       0, 'c'},
 	{"verbose",    no_argument,       0, 'v'},
 	{"help",       no_argument,       0, 'h'},
+	{"gridx",      required_argument, 0, 'p'},
+	{"gridy",      required_argument, 0, 'q'},
+	{"blockx",     required_argument, 0, 'r'},
+	{"blocky",     required_argument, 0, 's'},
 	{0, 0, 0, 0}
 };
 
@@ -47,6 +51,10 @@ void print_help(char *progname) {
 	printf("  -c, --checkpoint        Enable checkpointing, checkpoints will be in BASENAME-ITERATION.vtk\n");
 	printf("  -v, --verbose           Set verbose output\n");
 	printf("  -h, --help              Print this message and exit\n");
+	printf("  -p, --gridx             Set CUDA grid size X\n");
+	printf("  -q, --gridy             Set CUDA grid size Y\n");
+	printf("  -r, --blockx            Set CUDA block size X\n");
+	printf("  -s, --blocky            Set CUDA block size Y\n");
 	printf("\n");
 	printf("Report bugs to <steven.wright@york.ac.uk>\n");
 }
@@ -65,7 +73,7 @@ void parse_args(int argc, char *argv[]) {
 	int n_specified = 0;
 	int t_specified = 0;
 
-	while ((c = getopt_long(argc, argv, "x:y:n:t:f:do:cvh", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "x:y:n:t:f:do:cvhp:q:r:s:", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 'x':
 				specifics.X = atoi(optarg);
@@ -95,6 +103,18 @@ void parse_args(int argc, char *argv[]) {
 				break;
 			case 'v':
 				verbose = 1;
+				break;
+			case 'p':
+				cuda_consts.grid_x = atoi(optarg);
+				break;
+			case 'q':
+				cuda_consts.grid_y = atoi(optarg);
+				break;
+			case 'r':
+				cuda_consts.block_x = atoi(optarg);
+				break;
+			case 's':
+				cuda_consts.block_y = atoi(optarg);
 				break;
 			case '?':
             case 'h':
