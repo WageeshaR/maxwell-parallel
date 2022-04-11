@@ -51,11 +51,11 @@ void allocate_arrays() {
 	alloc_2d_cuda_array(specifics.X, specifics.Y, &arrays.Bz, &arrays.bz_pitch);
 	
 	arrays.E_size_x = specifics.X+1; arrays.E_size_y = specifics.Y+1; arrays.E_size_z = 3;
-	alloc_3d_cuda_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z, &arrays.E);
+	alloc_3d_cuda_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z, &arrays.E, &arrays.e_pitch);
 	host_E = alloc_3d_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z);
 
 	arrays.B_size_x = specifics.X+1; arrays.B_size_y = specifics.Y+1; arrays.B_size_z = 3;
-	alloc_3d_cuda_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z, &arrays.B);
+	alloc_3d_cuda_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z, &arrays.B, &arrays.b_pitch);
 	host_B = alloc_3d_array(arrays.B_size_x, arrays.B_size_y, arrays.B_size_z);
 }
 
@@ -91,7 +91,7 @@ __global__ void problem_set_up(Arrays arrays, Specifics specifics) {
 			double rlen = sqrt(rx*rx + ry*ry);
 			double tx = (rlen == 0) ? 0 : ry / rlen;
 			double mag = exp(-400.0 * (rlen - (specifics.lengthX / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
-			arrays.Ex[i * arrays.Ex_size_y + j] = mag * tx;
+			arrays.Ex[i * arrays.ex_pitch + j] = mag * tx;
 		}
 	}
     for (int i = 0; i < arrays.Ey_size_x; i++ ) {
@@ -103,7 +103,7 @@ __global__ void problem_set_up(Arrays arrays, Specifics specifics) {
             double rlen = sqrt(rx*rx + ry*ry);
             double ty = (rlen == 0) ? 0 : -rx / rlen;
 			double mag = exp(-400.0 * (rlen - (specifics.lengthY / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
-            arrays.Ey[i*arrays.Ey_size_y + j] = mag * ty;
+            arrays.Ey[i*arrays.ey_pitch + j] = mag * ty;
 		}
 	}
 }

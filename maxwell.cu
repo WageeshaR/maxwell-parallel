@@ -20,8 +20,8 @@ __global__ void update_fields(Constants constants, Specifics specifics, Arrays a
 
 	for (int i = cpx_ex * tidx; i < cpx_ex * (tidx + 1); i++) {
 		for (int j = cpy_ey * tidy; j < cpy_ey * (tidy + 1); j++) {
-			arrays.Bz[i * arrays.Bz_size_y + j] = arrays.Bz[i * arrays.Bz_size_y + j] - (specifics.dt / specifics.dx) * (arrays.Ey[(i+1) * arrays.Ey_size_y + j] - arrays.Ey[i * arrays.Ey_size_y + j])
-				                					+ (specifics.dt / specifics.dy) * (arrays.Ex[i * arrays.Ex_size_y + j + 1] - arrays.Ex[i * arrays.Ex_size_y + j]);
+			arrays.Bz[i * arrays.bz_pitch + j] = arrays.Bz[i * arrays.bz_pitch + j] - (specifics.dt / specifics.dx) * (arrays.Ey[(i+1) * arrays.ey_pitch + j] - arrays.Ey[i * arrays.ey_pitch + j])
+				                					+ (specifics.dt / specifics.dy) * (arrays.Ex[i * arrays.ex_pitch + j + 1] - arrays.Ex[i * arrays.ex_pitch + j]);
 			// printf("%14.8e\n", arrays.Bz[i * arrays.Bz_size_y + j]);
 		}
 	}
@@ -30,8 +30,8 @@ __global__ void update_fields(Constants constants, Specifics specifics, Arrays a
 		for (int j = cpy_ey * tidy; j < cpy_ey * (tidy + 1); j++) {
 			if (tidy == 0 && j == 0)
 				continue;
-			arrays.Ex[i * arrays.Ex_size_y + j] = arrays.Ex[i * arrays.Ex_size_y + j]
-													+ (specifics.dt / (specifics.dy * constants.eps * constants.mu)) * (arrays.Bz[i * arrays.Bz_size_y + j] - arrays.Bz[i * arrays.Bz_size_y + j - 1]);
+			arrays.Ex[i * arrays.ex_pitch + j] = arrays.Ex[i * arrays.ex_pitch + j]
+													+ (specifics.dt / (specifics.dy * constants.eps * constants.mu)) * (arrays.Bz[i * arrays.bz_pitch + j] - arrays.Bz[i * arrays.bz_pitch + j - 1]);
 		}
 	}
 
@@ -39,8 +39,8 @@ __global__ void update_fields(Constants constants, Specifics specifics, Arrays a
 		for (int j = cpy_ey * tidy; j < cpy_ey * (tidy + 1); j++) {
 			if (tidx == 0 && i == 0)
 				continue;
-			arrays.Ey[i * arrays.Ey_size_y + j] = arrays.Ey[i * arrays.Ey_size_y + j]
-													- (specifics.dt / (specifics.dx * constants.eps * constants.mu)) * (arrays.Bz[i * arrays.Bz_size_y + j] - arrays.Bz[(i - 1) * arrays.Bz_size_y + j]);
+			arrays.Ey[i * arrays.ey_pitch + j] = arrays.Ey[i * arrays.ey_pitch + j]
+													- (specifics.dt / (specifics.dx * constants.eps * constants.mu)) * (arrays.Bz[i * arrays.bz_pitch + j] - arrays.Bz[(i - 1) * arrays.bz_pitch + j]);
 		}
 	}
 }
@@ -57,18 +57,18 @@ __global__ void apply_boundary(Arrays arrays) {
 	
 	for (int i = tidx * cpx_ex; i < cpx_ex * (tidx + 1); i++) {
 		if (tidy == 0) {
-			arrays.Ex[i * arrays.Ex_size_y] = -arrays.Ex[i * arrays.Ex_size_y + 1];
+			arrays.Ex[i * arrays.ex_pitch] = -arrays.Ex[i * arrays.ex_pitch + 1];
 			// printf("%14.8e\n", -arrays.Ex[i * arrays.Ex_size_y + 1]);
 		}
 		if (tidy == gridDim.y * blockDim.y - 1)
-			arrays.Ex[i * arrays.Ex_size_y + arrays.Ex_size_y - 1] = -arrays.Ex[i * arrays.Ex_size_y + arrays.Ex_size_y - 2];
+			arrays.Ex[i * arrays.ex_pitch + arrays.Ex_size_y - 1] = -arrays.Ex[i * arrays.ex_pitch + arrays.Ex_size_y - 2];
 	}
 
 	for (int j = tidy * cpy_ey; j < cpy_ey * (tidy + 1); j++) {
 		if (tidx == 0)
-			arrays.Ey[j] = -arrays.Ey[arrays.Ey_size_y + j];
+			arrays.Ey[j] = -arrays.Ey[arrays.ey_pitch + j];
 		if (tidx == gridDim.x * blockDim.x - 1)
-			arrays.Ey[arrays.Ey_size_y * (arrays.Ey_size_x - 1) + j] = -arrays.Ey[arrays.Ey_size_y * (arrays.Ey_size_x - 2) + j];
+			arrays.Ey[arrays.ey_pitch * (arrays.Ey_size_x - 1) + j] = -arrays.Ey[arrays.ey_pitch * (arrays.Ey_size_x - 2) + j];
 	}
 }
 
@@ -90,11 +90,11 @@ __global__ void resolve_to_grid(double *E_mag, double *B_mag, Arrays arrays) {
 		for (int j = cpy_y * tidy; j < cpy_y * (tidy + 1); j++) {
 			if ((tidx == 0 && i == 0) || (tidy == 0 && j == 0))
 				continue;
-			arrays.E[(i * arrays.E_size_y + j) * arrays.E_size_z] = (arrays.Ex[(i-1) * arrays.Ex_size_y + j] + arrays.Ex[i * arrays.Ex_size_y + j]) / 2.0;
-			arrays.E[(i * arrays.E_size_y + j) * arrays.E_size_z + 1] = (arrays.Ey[i * arrays.Ey_size_y + j - 1] + arrays.Ey[i * arrays.Ey_size_y + j]) / 2.0;
+			arrays.E[i * arrays.e_pitch + j * arrays.E_size_z] = (arrays.Ex[(i-1) * arrays.ex_pitch + j] + arrays.Ex[i * arrays.ex_pitch + j]) / 2.0;
+			arrays.E[i * arrays.e_pitch + j * arrays.E_size_z + 1] = (arrays.Ey[i * arrays.ey_pitch + j - 1] + arrays.Ey[i * arrays.ey_pitch + j]) / 2.0;
 
-			E_mag[tidy * gridDim.x * blockDim.x + tidx] += sqrt((arrays.E[(i * arrays.E_size_y + j) * arrays.E_size_z] * arrays.E[(i * arrays.E_size_y + j) * arrays.E_size_z])
-																+ (arrays.E[(i * arrays.E_size_y + j) * arrays.E_size_z + 1] * arrays.E[(i * arrays.E_size_y + j) * arrays.E_size_z + 1]));
+			E_mag[tidy * gridDim.x * blockDim.x + tidx] += sqrt((arrays.E[i * arrays.e_pitch + j * arrays.E_size_z] * arrays.E[i * arrays.e_pitch + j * arrays.E_size_z])
+																+ (arrays.E[i * arrays.e_pitch + j * arrays.E_size_z + 1] * arrays.E[i * arrays.e_pitch + j * arrays.E_size_z + 1]));
 		}
 	}
 	
@@ -102,10 +102,10 @@ __global__ void resolve_to_grid(double *E_mag, double *B_mag, Arrays arrays) {
 		for (int j = cpy_y * tidy; j < cpy_y * (tidy + 1); j++) {
 			if ((tidx == 0 && i == 0) || (tidy == 0 && j == 0))
 				continue;
-			arrays.B[(i * arrays.B_size_y + j) * arrays.B_size_z + 2] = (arrays.Bz[(i-1) * arrays.Bz_size_y + j] + arrays.Bz[i * arrays.Bz_size_y + j]
-																		+ arrays.Bz[i * arrays.Bz_size_y + j - 1] + arrays.Bz[(i-1) * arrays.Bz_size_y + j - 1]) / 4.0;
+			arrays.B[i * arrays.b_pitch + j * arrays.B_size_z + 2] = (arrays.Bz[(i-1) * arrays.bz_pitch + j] + arrays.Bz[i * arrays.bz_pitch + j]
+																		+ arrays.Bz[i * arrays.bz_pitch + j - 1] + arrays.Bz[(i-1) * arrays.bz_pitch + j - 1]) / 4.0;
 
-			B_mag[tidy * gridDim.x * blockDim.x + tidx] += sqrt(arrays.B[(i * arrays.B_size_y + j) * arrays.B_size_z + 2] * arrays.B[(i * arrays.B_size_y + j) * arrays.B_size_z + 2]);
+			B_mag[tidy * gridDim.x * blockDim.x + tidx] += sqrt(arrays.B[i * arrays.b_pitch + j * arrays.B_size_z + 2] * arrays.B[i * arrays.b_pitch + j * arrays.B_size_z + 2]);
 		}
 	}
 }
@@ -136,6 +136,8 @@ int main(int argc, char *argv[]) {
 	double *d_E_mag_vec, *d_B_mag_vec;
 	cudaMalloc(&d_E_mag_vec, total_threads * sizeof(double));
 	cudaMalloc(&d_B_mag_vec, total_threads * sizeof(double));
+	long e_pitch_host = (long) arrays.E_size_y * arrays.E_size_z * sizeof(double);
+	long b_pitch_host = (long) arrays.B_size_y * arrays.B_size_z * sizeof(double);
 
 	// start at time 0
 	double t = 0.0;
@@ -157,19 +159,25 @@ int main(int argc, char *argv[]) {
 			}
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 
-			// if ((!no_output) && (enable_checkpoints)) {
-			// 	cudaMemcpy(&host_E[0][0][0], arrays.E, arrays.E_size_x * arrays.E_size_y * arrays.E_size_z * sizeof(double), cudaMemcpyDeviceToHost);
-			// 	write_checkpoint(i);
-			// }
+			if ((!no_output) && (enable_checkpoints)) {
+				cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch, e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
+				cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch, b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
+				write_checkpoint(i);
+			}
 		}
 
 		i++;
 	}
 
-	// double E_mag, B_mag;
-	// resolve_to_grid(&E_mag, &B_mag, arrays);
-
-	// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
+	double E_mag, B_mag;
+	resolve_to_grid<<<gridShape, blockShape>>>(d_E_mag_vec, d_B_mag_vec, arrays);
+	cudaMemcpy(E_mag_vec, d_E_mag_vec, total_threads * sizeof(double), cudaMemcpyDeviceToHost);
+	cudaMemcpy(B_mag_vec, d_B_mag_vec, total_threads * sizeof(double), cudaMemcpyDeviceToHost);
+	for (int u = 0; u < total_threads; u++) {
+		E_mag += E_mag_vec[u];
+		B_mag += B_mag_vec[u];
+	}
+	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
 
 	// if (!no_output) 
