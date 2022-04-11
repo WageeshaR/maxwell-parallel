@@ -156,6 +156,7 @@ int main(int argc, char *argv[]) {
 	// start at time 0
 	double t = 0.0;
 	int i = 0;
+	double global_E_mag, global_B_mag;
 
 	MPI_Datatype ex_column, ey_column, bz_column;
 	MPI_Type_vector(1, Ex_size_y, Ex_size_y, MPI_DOUBLE, &ex_column);
@@ -174,7 +175,6 @@ int main(int argc, char *argv[]) {
 	while (i < steps) {
 		apply_boundary();
 		update_fields(ex_column, ey_column, bz_column);
-		double global_E_mag, global_B_mag;
 		t += dt;
 
 		if (i % output_freq == 0) {
@@ -188,8 +188,6 @@ int main(int argc, char *argv[]) {
 			
 			MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
 			MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
-			MPI_Barrier(MPI_COMM_WORLD);
-
 			if ((!no_output) && (enable_checkpoints) && rank == 0)
 				write_checkpoint(i);
 		}
@@ -198,13 +196,19 @@ int main(int argc, char *argv[]) {
 
 	double E_mag, B_mag;
 	resolve_to_grid(&E_mag, &B_mag);
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Reduce(&E_mag, &global_E_mag, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&B_mag, &global_B_mag, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
-	// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
-	printf("Simulation complete.\n");
+	if (rank == 0) {
+		printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
+		printf("Simulation complete.\n");
+	}
 
 	MPI_Type_free(&ey_column);
-
-	if (!no_output) 
+	MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
+	MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
+	if (!no_output && rank == 0) 
 		write_result();
 
 	free_arrays();
