@@ -1,0 +1,1 @@
+scp *.cu *.h Makefile wrs505@viking.york.ac.uk:~/scratch/maxwell/
