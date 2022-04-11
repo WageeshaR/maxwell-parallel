@@ -149,7 +149,6 @@ int main(int argc, char *argv[]) {
 			double E_mag = 0;
 			double B_mag = 0;
 			resolve_to_grid<<<gridShape, blockShape>>>(d_E_mag_vec, d_B_mag_vec, arrays);
-			cudaDeviceSynchronize();
 			cudaMemcpy(E_mag_vec, d_E_mag_vec, total_threads * sizeof(double), cudaMemcpyDeviceToHost);
 			cudaMemcpy(B_mag_vec, d_B_mag_vec, total_threads * sizeof(double), cudaMemcpyDeviceToHost);
 			for (int u = 0; u < total_threads; u++) {

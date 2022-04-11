@@ -31,10 +31,10 @@ int steps = 0;
  * @param n The second dimension of the array
  * @return double** A 2D array
  */
-void alloc_2d_cuda_array(int m, int n, double **array) {
-	double *tmp = (double *) calloc(n*m, sizeof(double));
-  	cudaMalloc((void **)array, n*m*sizeof(double));
-	cudaMemcpy(*array, tmp, n*m*sizeof(double), cudaMemcpyHostToDevice);
+void alloc_2d_cuda_array(int m, int n, double **array, size_t *pitch) {
+  	cudaMallocPitch((void **)array, pitch, n*sizeof(double), m);
+	double *tmp = (double *) calloc((*pitch)*m, sizeof(double));
+	cudaMemcpy(*array, tmp, (*pitch)*m*sizeof(double), cudaMemcpyHostToDevice);
 }
 
 /**

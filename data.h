@@ -77,7 +77,7 @@ extern int steps;
 extern double *** host_E;
 extern double *** host_B;
 
-void alloc_2d_cuda_array(int m, int n, double **array);
+void alloc_2d_cuda_array(int m, int n, double **array, size_t *pitch);
 void free_2d_cuda_array(double *array);
 void alloc_3d_cuda_array(int m, int n, int o, double **array);
 void free_3d_cuda_array(double *array);

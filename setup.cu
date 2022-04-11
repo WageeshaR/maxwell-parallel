@@ -43,12 +43,12 @@ void setup() {
  */
 void allocate_arrays() {
 	arrays.Ex_size_x = specifics.X; arrays.Ex_size_y = specifics.Y+1;
-	alloc_2d_cuda_array(specifics.X, specifics.Y+1, &arrays.Ex);
+	alloc_2d_cuda_array(specifics.X, specifics.Y+1, &arrays.Ex, &arrays.ex_pitch);
 	arrays.Ey_size_x = specifics.X+1; arrays.Ey_size_y = specifics.Y;
-	alloc_2d_cuda_array(specifics.X+1, specifics.Y, &arrays.Ey);
+	alloc_2d_cuda_array(specifics.X+1, specifics.Y, &arrays.Ey, &arrays.ey_pitch);
 	
 	arrays.Bz_size_x = specifics.X; arrays.Bz_size_y = specifics.Y;
-	alloc_2d_cuda_array(specifics.X, specifics.Y, &arrays.Bz);
+	alloc_2d_cuda_array(specifics.X, specifics.Y, &arrays.Bz, &arrays.bz_pitch);
 	
 	arrays.E_size_x = specifics.X+1; arrays.E_size_y = specifics.Y+1; arrays.E_size_z = 3;
 	alloc_3d_cuda_array(arrays.E_size_x, arrays.E_size_y, arrays.E_size_z, &arrays.E);
