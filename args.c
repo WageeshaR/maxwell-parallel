@@ -14,7 +14,6 @@ int no_output = 0;
 int output_freq = 100;
 int enable_checkpoints = 0;
 int omp_num_threads = 1;
-int enable_comparison = 0;
 
 static struct option long_options[] = {
     {"cellx",      required_argument, 0, 'x'},
@@ -44,6 +43,7 @@ void print_help(char *progname) {
 	printf("  -n N, --iters=N         Iterations (only one of n and t should be specified)\n");
 	printf("  -t N, --endtime=N       Set the end time (see -n)\n");
 	printf("  -f N, --freq=N          Output frequency (i.e. steps between output)\n");
+	printf("  -l N, --threads=N       Number of OpenMP threads to use\n");
 	printf("  -d, --noio              Disable file I/O\n");
 	printf("  -o FILE, --output=FILE  Set base filename for output (final output will be in BASENAME.vtk\n");
 	printf("  -c, --checkpoint        Enable checkpointing, checkpoints will be in BASENAME-ITERATION.vtk\n");
@@ -67,7 +67,7 @@ void parse_args(int argc, char *argv[]) {
 	int n_specified = 0;
 	int t_specified = 0;
 
-	while ((c = getopt_long(argc, argv, "x:y:n:t:f:l:r:do:cvh", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "x:y:n:t:f:l:do:cvh", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 'x':
 				X = atoi(optarg);
@@ -88,9 +88,6 @@ void parse_args(int argc, char *argv[]) {
 				break;
 			case 'l':
 				omp_num_threads = atoi(optarg);
-				break;
-			case 'r':
-				enable_comparison = atoi(optarg);
 				break;
 			case 'd':
 				no_output = 1;

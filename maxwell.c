@@ -101,13 +101,6 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 int main(int argc, char *argv[]) {
 	set_defaults();
 	parse_args(argc, argv);
-	if (enable_comparison == 1) {
-		if (X != 100 || Y != 100) {
-			printf("To enable comparison X and Y must be 100\n");
-			printf("Exiting with status 1\n");
-			exit(1);
-		}
-	}
 	setup();
 	omp_set_num_threads(omp_num_threads);
 	total_error = 0;
@@ -134,7 +127,7 @@ int main(int argc, char *argv[]) {
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
-			// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
 			// if ((!no_output) && (enable_checkpoints))
 			// 	write_checkpoint(i);
@@ -145,12 +138,10 @@ int main(int argc, char *argv[]) {
 	double E_mag, B_mag;
 	resolve_to_grid(&E_mag, &B_mag);
 
-	// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
 	end = omp_get_wtime();
 	printf("Elapsed wall clock time is %fs\n", end - start);
-	if (enable_comparison == 1)
-		printf("Total error is %.12e\n", total_error);
 
 	if (!no_output) 
 		write_result();

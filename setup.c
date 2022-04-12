@@ -124,6 +124,7 @@ void free_arrays() {
  * 
  */
 void problem_set_up() {
+	#pragma omp parallel for schedule(static) collapse(2)
     for (int i = 0; i < Ex_size_x; i++ ) {
         for (int j = 0; j < Ex_size_y; j++) {
             double xcen = lengthX / 2.0;
