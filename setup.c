@@ -124,34 +124,37 @@ void free_arrays() {
  * 
  */
 void problem_set_up() {
-	#pragma omp parallel for schedule(static) collapse(2)
-    for (int i = 0; i < Ex_size_x; i++ ) {
-        for (int j = 0; j < Ex_size_y; j++) {
-            double xcen = lengthX / 2.0;
-            double ycen = lengthY / 2.0;
-            double xcoord = (i - xcen) * dx;
-            double ycoord = j * dy;
-            double rx = xcen - xcoord;
-            double ry = ycen - ycoord;
-            double rlen = sqrt(rx*rx + ry*ry);
-			double tx = (rlen == 0) ? 0 : ry / rlen;
-            double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
-            Ex[i][j] = mag * tx;
+	#pragma omp parallel
+	{
+		#pragma omp for collapse(2)
+		for (int i = 0; i < Ex_size_x; i++ ) {
+			for (int j = 0; j < Ex_size_y; j++) {
+				double xcen = lengthX / 2.0;
+				double ycen = lengthY / 2.0;
+				double xcoord = (i - xcen) * dx;
+				double ycoord = j * dy;
+				double rx = xcen - xcoord;
+				double ry = ycen - ycoord;
+				double rlen = sqrt(rx*rx + ry*ry);
+				double tx = (rlen == 0) ? 0 : ry / rlen;
+				double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
+				Ex[i][j] = mag * tx;
+			}
 		}
-	}
-	#pragma omp parallel for schedule(static) collapse(2)
-    for (int i = 0; i < Ey_size_x; i++ ) {
-        for (int j = 0; j < Ey_size_y; j++) {
-            double xcen = lengthX / 2.0;
-            double ycen = lengthY / 2.0;
-            double xcoord = i * dx;
-            double ycoord = (j - ycen) * dy;
-            double rx = xcen - xcoord;
-            double ry = ycen - ycoord;
-            double rlen = sqrt(rx*rx + ry*ry);
-            double ty = (rlen == 0) ? 0 : -rx / rlen;
-			double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
-            Ey[i][j] = mag * ty;
+		#pragma omp for collapse(2)
+		for (int i = 0; i < Ey_size_x; i++ ) {
+			for (int j = 0; j < Ey_size_y; j++) {
+				double xcen = lengthX / 2.0;
+				double ycen = lengthY / 2.0;
+				double xcoord = i * dx;
+				double ycoord = (j - ycen) * dy;
+				double rx = xcen - xcoord;
+				double ry = ycen - ycoord;
+				double rlen = sqrt(rx*rx + ry*ry);
+				double ty = (rlen == 0) ? 0 : -rx / rlen;
+				double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
+				Ey[i][j] = mag * ty;
+			}
 		}
 	}
 }
