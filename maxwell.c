@@ -186,10 +186,14 @@ int main(int argc, char *argv[]) {
 			if (rank == 0)
 				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
 			
-			MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
-			MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
-			if ((!no_output) && (enable_checkpoints) && rank == 0)
+			if (enable_checkpoints && !no_output) {
+				MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
+				MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
+			}
+			
+			if ((!no_output) && (enable_checkpoints) && rank == 0) {
 				write_checkpoint(i);
+			}
 		}
 		i++;
 	}
