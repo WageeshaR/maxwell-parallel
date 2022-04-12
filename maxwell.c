@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "args.h"
 #include "vtk.h"
@@ -96,6 +97,8 @@ int main(int argc, char *argv[]) {
 	
 	if (verbose) print_opts();
 	
+	clock_t start, end;
+	start = clock();
 	allocate_arrays();
 
 	problem_set_up();
@@ -126,6 +129,9 @@ int main(int argc, char *argv[]) {
 
 	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
+
+	end = clock();
+	printf("Elapsed time is %f\n", (double) (end - start) / CLOCKS_PER_SEC);
 
 	if (!no_output) 
 		write_result();
