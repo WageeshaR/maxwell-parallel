@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --job-name=maxwell_omp             # Job name
+#SBATCH --ntasks=1                         # Run a single task...
+#SBATCH --cpus-per-task=4                  # ...with four cores
+#SBATCH --mem=1gb                          # Job memory request
+#SBATCH --time=00:05:00                    # Time limit hrs:min:sec
+#SBATCH --output=omp_job_%j.log            # Standard output and error log
+
+echo My working directory is `pwd`
+echo Running job on host:
+echo -e '\t'`hostname` at `date`
+echo $SLURM_CPUS_ON_NODE CPU cores available
+echo
+
+./maxwell -x 100 -y 100 -c -f 1 -o omp/my_sim -n 1000 -l 4
