@@ -25,6 +25,9 @@ extern double dt;
 extern double T;
 extern int steps;
 
+// Comparison file name attributes
+extern char comp_file_name_base[1024];
+
 // x = Ex values
 // o = Ey values
 // * = Bz values

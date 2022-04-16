@@ -93,6 +93,20 @@ int main(int argc, char *argv[]) {
 	parse_args(argc, argv);
 	setup();
 
+	char comp_file_name[1024];
+	FILE *comp_file;
+	if (enable_comparison) {
+		if (output_freq != 1 || !enable_checkpoints) {
+			printf("You must set output_freq = 1 and enable checkpoints to run in comparison mode\n");
+			exit(0);
+		}
+		else {
+			sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", X, Y);
+			sprintf(comp_file_name, comp_file_name_base, "_mag.cmp");
+			comp_file = fopen(comp_file_name, "w");
+		}
+	}
+
 	printf("Running problem size %f x %f on a %d x %d grid.\n", lengthX, lengthY, X, Y);
 	
 	if (verbose) print_opts();
@@ -115,6 +129,9 @@ int main(int argc, char *argv[]) {
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
+			if (enable_comparison) {
+				fprintf(comp_file, "%.15f %.15f\n", E_mag, B_mag);
+			}
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
 			if ((!no_output) && (enable_checkpoints))

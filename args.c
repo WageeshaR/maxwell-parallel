@@ -13,6 +13,11 @@ int input_problem = 0;
 int no_output = 0;
 int output_freq = 100;
 int enable_checkpoints = 0;
+/**
+ * @brief Enable comparison
+ * Writes appropriate output files to use for comparison
+ */
+int enable_comparison = 0;
 
 static struct option long_options[] = {
     {"cellx",      required_argument, 0, 'x'},
@@ -25,6 +30,7 @@ static struct option long_options[] = {
 	{"checkpoint", no_argument,       0, 'c'},
 	{"verbose",    no_argument,       0, 'v'},
 	{"help",       no_argument,       0, 'h'},
+	{"comparison",       no_argument,       0, 'e'},
 	{0, 0, 0, 0}
 };
 
@@ -47,6 +53,7 @@ void print_help(char *progname) {
 	printf("  -c, --checkpoint        Enable checkpointing, checkpoints will be in BASENAME-ITERATION.vtk\n");
 	printf("  -v, --verbose           Set verbose output\n");
 	printf("  -h, --help              Print this message and exit\n");
+	printf("  -e, --comparison        Enabling comparison mode\n");
 	printf("\n");
 	printf("Report bugs to <steven.wright@york.ac.uk>\n");
 }
@@ -65,7 +72,7 @@ void parse_args(int argc, char *argv[]) {
 	int n_specified = 0;
 	int t_specified = 0;
 
-	while ((c = getopt_long(argc, argv, "x:y:n:t:f:do:cvh", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "x:y:n:t:f:do:cvhe", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 'x':
 				X = atoi(optarg);
@@ -100,6 +107,8 @@ void parse_args(int argc, char *argv[]) {
             case 'h':
 				print_help(argv[0]);
 				exit(1);
+			case 'e':
+				enable_comparison = 1;
 		}
 	}
 	if (n_specified == 1 && t_specified == 1) {
