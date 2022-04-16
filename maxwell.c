@@ -114,6 +114,7 @@ int main(int argc, char *argv[]) {
 	setup();
 	omp_set_num_threads(omp_num_threads);
 	total_error = 0;
+	printf("comp mode is %d\n", comp_mode);
 	
 	FILE *comp_file;
 	char comp_file_name[1024];
@@ -167,9 +168,10 @@ int main(int argc, char *argv[]) {
 					while (token)
 					{
 						double value = strtod(token, &ptr);
-						value = round(value * round_by) / round_by; // Rounding to account only first 15 deciman points
+						value = round(value * round_by) / round_by; // Rounding to account only first 15 decimal points
 						double diff = abs(value - mags[cnt]);
 						total_error += diff;
+						token = strtok(NULL, " ");
 						cnt++;
 					}
 					
@@ -190,6 +192,8 @@ int main(int argc, char *argv[]) {
 	printf("Simulation complete.\n");
 	end = omp_get_wtime();
 	printf("Elapsed wall clock time is %fs\n", end - start);
+	if (comp_mode != 0)
+		printf("Total error is %.15f\n", total_error);
 
 	if (!no_output) 
 		write_result();

@@ -70,7 +70,7 @@ void parse_args(int argc, char *argv[]) {
 	int n_specified = 0;
 	int t_specified = 0;
 
-	while ((c = getopt_long(argc, argv, "x:y:n:t:f:l:do:cvh:e", long_options, &option_index)) != -1) {
+	while ((c = getopt_long(argc, argv, "x:y:n:t:f:l:do:cvhe:", long_options, &option_index)) != -1) {
 		switch (c) {
 			case 'x':
 				X = atoi(optarg);
