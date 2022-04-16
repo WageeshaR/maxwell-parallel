@@ -34,8 +34,6 @@ int steps = 0;
 void alloc_2d_cuda_array(int m, int n, double **array, size_t *pitch) {
   	cudaMallocPitch((void **)array, pitch, n*sizeof(double), m);
 	*pitch = (*pitch) / sizeof(double);
-	// double *tmp = (double *) calloc((*pitch)*m, sizeof(double));
-	// cudaMemcpy(*array, tmp, (*pitch)*m*sizeof(double), cudaMemcpyHostToDevice);
 }
 
 /**
@@ -58,9 +56,6 @@ void free_2d_cuda_array(double *array) {
 void alloc_3d_cuda_array(int m, int n, int o, double **array, size_t *pitch) {
 	cudaMallocPitch((void **)array, pitch, n*o*sizeof(double), m);
 	*pitch = (*pitch) / sizeof(double);
-	printf("Pitch is %ld\n", *pitch);
-	double *tmp = (double *) calloc((*pitch)*m, sizeof(double));
-	cudaMemcpy(*array, tmp, (*pitch)*m*sizeof(double), cudaMemcpyHostToDevice);
 }
 
 /**
