@@ -3,6 +3,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <omp.h>
+#include <string.h>
 
 #include "args.h"
 #include "vtk.h"
@@ -113,6 +114,22 @@ int main(int argc, char *argv[]) {
 	setup();
 	omp_set_num_threads(omp_num_threads);
 	total_error = 0;
+	
+	FILE *comp_file;
+	char comp_file_name[1024];
+	char *buffer = (char *) malloc(32 * sizeof(char));
+	size_t bufsize = 32;
+	if (comp_mode != 0) {
+		sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", X, Y);
+		if (comp_mode == 1) {
+			sprintf(comp_file_name, comp_file_name_base, "_mag.cmp");
+			comp_file = fopen(comp_file_name, "r");
+			if (comp_file == NULL) {
+				printf("Unable to find comparison file %s\n", comp_file_name);
+				exit(1);
+			}
+		}
+	}
 
 	printf("Running problem size %f x %f on a %d x %d grid.\n", lengthX, lengthY, X, Y);
 	
@@ -127,19 +144,41 @@ int main(int argc, char *argv[]) {
 	// start at time 0
 	double t = 0.0;
 	int i = 0;
+	int comp_line_len = 0;
+	double round_by = pow(10, 15);
 	while (i < steps) {
 		apply_boundary();
 		update_fields();
 
 		t += dt;
+		if (comp_mode == 1)
+			comp_line_len = getline(&buffer, &bufsize, comp_file);
 
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
+			if (comp_mode == 1) {
+				char *token;
+				char *ptr;
+				double mags[2] = { E_mag, B_mag };
+				if (comp_line_len != -1) {
+					token = strtok(buffer, " ");
+					int cnt = 0;
+					while (token)
+					{
+						double value = strtod(token, &ptr);
+						value = round(value * round_by) / round_by; // Rounding to account only first 15 deciman points
+						double diff = abs(value - mags[cnt]);
+						total_error += diff;
+						cnt++;
+					}
+					
+				}
+			}
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
-			// if ((!no_output) && (enable_checkpoints))
-			// 	write_checkpoint(i);
+			if ((!no_output) && (enable_checkpoints))
+				write_checkpoint(i);
 		}
 
 		i++;
