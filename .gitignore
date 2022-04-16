@@ -2,3 +2,6 @@
 obj
 omp
 original
+comp
+cuda
+mpi
