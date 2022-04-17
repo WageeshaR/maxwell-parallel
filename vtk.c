@@ -66,11 +66,7 @@ int write_checkpoint(int iteration) {
  * @return int Return whether the write was successful
  */
 int write_result() {
-    char comp_filename[1024];
-    if (comp_mode != 0) {
-        sprintf(comp_filename, comp_file_name_base, ".cmp");
-    }
-    return write_vtk(result_filename, comp_filename);
+    return write_vtk(result_filename, NULL);
 }
 
 /**
