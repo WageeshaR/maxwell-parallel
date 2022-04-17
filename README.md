@@ -1,4 +1,4 @@
-# A very simple 2D Maxwell Solver using Yee FDTD
+# MPI parallelisation approach of 2D Maxwell Solver
 
 This is a simple solver for Maxwell's equations in two dimensions. The application uses the method introduced by Kane Yee in 1966 [1].
 
