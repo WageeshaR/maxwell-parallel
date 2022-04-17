@@ -49,7 +49,7 @@ $ ./maxwell -x 100 -y 100 -f 1 -o -n 1000 -p 2 -q 2 -r 5 -s 5 -e 1
 Executing above line will run the application with comp_mode == 1. Notice the absence of *-c* flag. It is not required as it only compares total magnitudes.
 
 ```
-$ mpiexec -n 8 ./maxwell -x 100 -y 100 -c -f 1 -o -n 1000 -p 2 -q 2 -r 5 -s 5 -e 2
+$ ./maxwell -x 100 -y 100 -c -f 1 -o -n 1000 -p 2 -q 2 -r 5 -s 5 -e 2
 ```
 
 Executing above line will run the application with comp_mode == 2. *-c* flag is required to run in this mode as the comparison performs at file writing stage.
