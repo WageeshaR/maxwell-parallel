@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
 			if (enable_comparison) {
-				fprintf(comp_file, "%.12e %.12e\n", E_mag, B_mag);
+				fprintf(comp_file, "%.15f %.15f\n", E_mag, B_mag);
 			}
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
