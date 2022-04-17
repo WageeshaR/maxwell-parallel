@@ -49,7 +49,7 @@ This will run a 100 x 100 problem (perfect for manageable visualisation), enable
 
 ```
 $ mkdir comp
-$ ./maxwell -x 100 -y 100 -c -f 1 -o -n 1000 -e
+$ ./maxwell -x 100 -y 100 -c -f 1 -n 1000 -e
 ```
 
 Running the application using above line will create necessary output files to be used in comparison modes for other parallelisation approaches. Make sure not to delete the directory *comp* after running the application. Note that this mode will not create regular *.vtk* output files but only *.cmp* files.
