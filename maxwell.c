@@ -118,8 +118,8 @@ int main(int argc, char *argv[]) {
 	
 	FILE *comp_file;
 	char comp_file_name[1024];
-	char *buffer = (char *) malloc(32 * sizeof(char));
-	size_t bufsize = 32;
+	char *buffer;
+	size_t bufsize = 1024;
 	if (comp_mode != 0) {
 		sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", X, Y);
 		if (comp_mode == 1) {
@@ -146,14 +146,15 @@ int main(int argc, char *argv[]) {
 	double t = 0.0;
 	int i = 0;
 	int comp_line_len = 0;
-	round_by = pow(10, 15);
 	while (i < steps) {
 		apply_boundary();
 		update_fields();
 
 		t += dt;
-		if (comp_mode == 1)
+		if (comp_mode == 1) {
+			buffer = (char *) calloc(1024, sizeof(char));
 			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
+		}
 
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;

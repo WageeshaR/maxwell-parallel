@@ -168,8 +168,7 @@ void compare_line(int len, char **buf, double mags[]) {
 		while (token)
 		{
 			double value = strtod(token, &ptr);
-			// value = round(value * round_by) / round_by; // Rounding to account only first 15 decimal points
-			printf("%.15f v %.15f\n", value, mags[cnt]);
+			printf("%.12e v %.12e\n", value, mags[cnt]);
 			double diff = fabs(value - mags[cnt]);
 			total_error += diff;
 			token = strtok(NULL, " ");

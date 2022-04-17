@@ -94,8 +94,8 @@ int write_vtk(char* filename, char *comp_filename) {
         printf("Unable to locate comparison file %s\n", comp_filename);
         exit(1);
     }
-	char *buffer = (char *) malloc(32 * sizeof(char));
-	size_t bufsize = 32;
+	char *buffer;
+	size_t bufsize = 1024;
     int comp_line_len = 0;
 
     if (comp_mode == 0) {
@@ -124,6 +124,7 @@ int write_vtk(char* filename, char *comp_filename) {
         for (int i = 0; i <= X; i++) {
             if (comp_mode == 2) {
                 double mags[3] = { E[i][j][0], E[i][j][1], 0 };
+                buffer = (char *) calloc(1024, sizeof(char));
                 comp_line_len = getline(&buffer, &bufsize, comp_f);
                 compare_line(comp_line_len, &buffer, mags);
             }
