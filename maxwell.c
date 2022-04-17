@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
 		write_result();
 	
 	if (comp_mode != 0)
-		printf("Total error is %.15f\n", total_error);
+		printf("Total error is %.15e\n", total_error);
 
 	free_arrays();
 

@@ -167,9 +167,19 @@ void compare_line(int len, char **buf, double mags[]) {
 		int cnt = 0;
 		while (token)
 		{
-			double value = strtod(token, &ptr);
-			double diff = fabs(value - mags[cnt]);
-			total_error += diff;
+			int o_exp, e_exp;
+			double o_fraction, e_fraction, frac_diff;
+			double e_value = strtod(token, &ptr);
+			e_fraction = frexp(e_value, &e_exp);
+			o_fraction = frexp(mags[cnt], &o_exp);
+			int exp_diff = e_exp - o_exp;
+			if (exp_diff > 0)
+				frac_diff = fabs(e_fraction*pow(10, exp_diff) - o_fraction);
+			else if (exp_diff < 0)
+				frac_diff = fabs(e_fraction - o_fraction*pow(10, exp_diff));
+			else
+				frac_diff = fabs(e_fraction - o_fraction);
+			total_error += frac_diff;
 			token = strtok(NULL, " ");
 			cnt++;
 		}
