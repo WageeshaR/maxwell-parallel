@@ -192,6 +192,9 @@ int main(int argc, char *argv[]) {
 	MPI_Type_vector(E_size_x-1, E_size_z*E_size_y, E_size_z*E_size_y, MPI_DOUBLE, &global_3d_grid);
 	MPI_Type_commit(&global_3d_grid);
 
+	double start, end;
+	start = MPI_Wtime();
+
 	while (i < steps) {
 		apply_boundary();
 		update_fields(ex_column, ey_column, bz_column);
@@ -245,6 +248,11 @@ int main(int argc, char *argv[]) {
 	
 	if (!no_output && rank == 0)
 		write_result();
+
+	end = MPI_Wtime();
+
+	if (rank == 0)
+		printf("Total elapsed time is %fs\n", end - start);
 
 	if (comp_mode != 0 && rank == 0)
 		printf("Total error is %.15e\n", total_error);
