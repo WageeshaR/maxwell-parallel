@@ -5,6 +5,8 @@
 
 #include "vtk.h"
 #include "data.h"
+#include "setup.h"
+#include "args.h"
 
 char checkpoint_basename[1024];
 char result_filename[1024];
@@ -46,8 +48,14 @@ char *get_basename() {
  */
 int write_checkpoint(int iteration) {
     char filename[1024];
+    char comp_filename[1024];
     sprintf(filename, checkpoint_basename, iteration);
-    return write_vtk(filename);
+    if (comp_mode != 0) {
+        char comp_file_tail[32];
+        sprintf(comp_file_tail, "_%d.cmp", iteration);
+        sprintf(comp_filename, comp_file_name_base, comp_file_tail);
+    }
+    return write_vtk(filename, comp_filename);
 }
 
 /**
@@ -56,7 +64,7 @@ int write_checkpoint(int iteration) {
  * @return int Return whether the write was successful
  */
 int write_result() {
-    return write_vtk(result_filename);
+    return write_vtk(result_filename, NULL);
 }
 
 /**
@@ -65,42 +73,79 @@ int write_result() {
  * @param filename The filename to write out
  * @return int Return whether the write was successful
  */
-int write_vtk(char* filename) {
-    FILE * f = fopen(filename, "w");
+int write_vtk(char* filename, char *comp_filename) {
+    FILE * f;
+    FILE * comp_f;
+    if (comp_mode == 0) 
+        f = fopen(filename, "w");
+    else if (comp_mode == 2) {
+        if (comp_filename == NULL)
+            return 0;
+        comp_f = fopen(comp_filename, "r");
+    }
     if (f == NULL) {
         perror("Error");
         return -1;
     }
+    if (comp_f == NULL) {
+        printf("Unable to locate comparison file %s\n", comp_filename);
+        exit(1);
+    }
+	char *buffer;
+	size_t bufsize = 1024;
+    int comp_line_len = 0;
 
-    // Write the VTK header information
-    fprintf(f, "# vtk DataFile Version 3.0\n");
-    fprintf(f, "Karman Output\n");
-    fprintf(f, "ASCII\n");
-    fprintf(f, "DATASET RECTILINEAR_GRID\n");
+    if (comp_mode == 0) {
+        // Write the VTK header information
+        fprintf(f, "# vtk DataFile Version 3.0\n");
+        fprintf(f, "Karman Output\n");
+        fprintf(f, "ASCII\n");
+        fprintf(f, "DATASET RECTILINEAR_GRID\n");
 
-    // Write out the grid information
-    fprintf(f, "DIMENSIONS %d %d 1\n", (specifics.X+1), (specifics.Y+1));
-    fprintf(f, "X_COORDINATES %d float\n", (specifics.X+1));
-    for (int i = 0; i <= specifics.X; i++) fprintf(f, "   %.12e", (specifics.lengthX * ((double) i / (specifics.X+1))));
-    fprintf(f, "\nY_COORDINATES %d float\n", (specifics.Y+1));
-    for (int i = 0; i <= specifics.Y; i++) fprintf(f, "   %.12e", (specifics.lengthY * ((double) i / (specifics.Y+1))));
-    fprintf(f, "\nZ_COORDINATES 1 float\n");
-    fprintf(f, "  0.000000000000e+00");
+        // Write out the grid information
+        fprintf(f, "DIMENSIONS %d %d 1\n", (specifics.X+1), (specifics.Y+1));
+        fprintf(f, "X_COORDINATES %d float\n", (specifics.X+1));
+        for (int i = 0; i <= specifics.X; i++) fprintf(f, "   %.12e", (specifics.lengthX * ((double) i / (specifics.X+1))));
+        fprintf(f, "\nY_COORDINATES %d float\n", (specifics.Y+1));
+        for (int i = 0; i <= specifics.Y; i++) fprintf(f, "   %.12e", (specifics.lengthY * ((double) i / (specifics.Y+1))));
+        fprintf(f, "\nZ_COORDINATES 1 float\n");
+        fprintf(f, "  0.000000000000e+00");
 
-    fprintf(f, "\nPOINT_DATA %d\n", ((specifics.X+1) * (specifics.Y+1)));
+        fprintf(f, "\nPOINT_DATA %d\n", ((specifics.X+1) * (specifics.Y+1)));
 
-    // Write out the E and B vector fields
-    fprintf(f, "VECTORS E_field float\n");
+        // Write out the E and B vector fields
+        fprintf(f, "VECTORS E_field float\n");
+    }
+
     for (int j = 0; j <= specifics.Y; j++) {
         for (int i = 0; i <= specifics.X; i++)
-            fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", host_E[i][j][0], host_E[i][j][1]);
-    }
-    fprintf(f, "VECTORS B_field float\n");
-    for (int j = 0; j <= specifics.Y; j++) {
-        for (int i = 0; i <= specifics.X; i++)
-            fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", host_B[i][j][2]);
+        if (comp_mode == 2) {
+                double mags[3] = { host_E[i][j][0], host_E[i][j][1], 0 };
+                buffer = (char *) calloc(1024, sizeof(char));
+                comp_line_len = getline(&buffer, &bufsize, comp_f);
+                compare_line(comp_line_len, &buffer, mags);
+            }
+            else if (comp_mode == 0)
+                fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", host_E[i][j][0], host_E[i][j][1]);
     }
 
-    fclose(f);
+    if (comp_mode == 0)
+        fprintf(f, "VECTORS B_field float\n");
+    
+    for (int j = 0; j <= specifics.Y; j++) {
+        for (int i = 0; i <= specifics.X; i++)
+            if (comp_mode == 2) {
+                double mags[3] = { 0, 0, host_B[i][j][2] };
+                comp_line_len = getline(&buffer, &bufsize, comp_f);
+                compare_line(comp_line_len, &buffer, mags);
+            }
+            else if (comp_mode == 0)
+                fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", host_B[i][j][2]);
+    }
+
+    if (comp_mode == 0)
+        fclose(f);
+    else if (comp_mode == 2)
+        fclose(comp_f);
     return 0;
 }

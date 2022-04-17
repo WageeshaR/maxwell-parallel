@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "vtk.h"
 #include "data.h"
 #include "setup.h"
+#include "args.h"
 
 /**
  * @brief Set up some default values before arguments have been loaded
@@ -105,5 +107,34 @@ __global__ void problem_set_up(Arrays arrays, Specifics specifics) {
 			double mag = exp(-400.0 * (rlen - (specifics.lengthY / 4.0)) * (rlen - (specifics.lengthY / 4.0)));
             arrays.Ey[i*arrays.ey_pitch + j] = mag * ty;
 		}
+	}
+}
+
+void compare_line(int len, char **buf, double mags[]) {
+	char *token;
+	char *ptr;
+	if (len != -1) {
+		token = strtok(*buf, " ");
+		int cnt = 0;
+		while (token)
+		{
+			int o_exp, e_exp;
+			double o_fraction, e_fraction, frac_diff;
+			double e_value = strtod(token, &ptr);
+			// printf("%.15e %.15e\n", e_value, mags[cnt]);
+			e_fraction = frexp(e_value, &e_exp);
+			o_fraction = frexp(mags[cnt], &o_exp);
+			int exp_diff = e_exp - o_exp;
+			if (exp_diff > 0)
+				frac_diff = fabs(e_fraction*pow(10, exp_diff) - o_fraction);
+			else if (exp_diff < 0)
+				frac_diff = fabs(e_fraction - o_fraction*pow(10, exp_diff));
+			else
+				frac_diff = fabs(e_fraction - o_fraction);
+			total_error += frac_diff;
+			token = strtok(NULL, " ");
+			cnt++;
+		}
+		
 	}
 }

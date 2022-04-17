@@ -5,6 +5,7 @@ void set_defaults();
 void setup();
 void allocate_arrays();
 void free_arrays();
+void compare_line(int len, char **buf, double mags[]);
 __global__ void problem_set_up(Arrays arrays, Specifics specifics);
 
 #endif

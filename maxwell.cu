@@ -22,7 +22,6 @@ __global__ void update_fields(Constants constants, Specifics specifics, Arrays a
 		for (int j = cpy_ey * tidy; j < cpy_ey * (tidy + 1); j++) {
 			arrays.Bz[i * arrays.bz_pitch + j] = arrays.Bz[i * arrays.bz_pitch + j] - (specifics.dt / specifics.dx) * (arrays.Ey[(i+1) * arrays.ey_pitch + j] - arrays.Ey[i * arrays.ey_pitch + j])
 				                					+ (specifics.dt / specifics.dy) * (arrays.Ex[i * arrays.ex_pitch + j + 1] - arrays.Ex[i * arrays.ex_pitch + j]);
-			// printf("%14.8e\n", arrays.Bz[i * arrays.Bz_size_y + j]);
 		}
 	}
 
@@ -121,6 +120,23 @@ int main(int argc, char *argv[]) {
 	set_defaults();
 	parse_args(argc, argv);
 	setup();
+	total_error = 0;
+
+	FILE *comp_file;
+	char comp_file_name[1024];
+	char *buffer;
+	size_t bufsize = 1024;
+	if (comp_mode != 0) {
+		sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", specifics.X, specifics.Y);
+		if (comp_mode == 1) {
+			sprintf(comp_file_name, comp_file_name_base, "_mag.cmp");
+			comp_file = fopen(comp_file_name, "r");
+			if (comp_file == NULL) {
+				printf("Unable to find comparison file %s\n", comp_file_name);
+				exit(1);
+			}
+		}
+	}
 
 	printf("Running problem size %f x %f on a %d x %d grid.\n", specifics.lengthX, specifics.lengthY, specifics.X, specifics.Y);
 	
@@ -142,10 +158,16 @@ int main(int argc, char *argv[]) {
 	// start at time 0
 	double t = 0.0;
 	int i = 0;
+	int comp_line_len = 0;
 	while (i < steps) {
 		apply_boundary<<<gridShape, blockShape>>>(arrays);
 		update_fields<<<gridShape, blockShape>>>(constants, specifics, arrays);
 		t += specifics.dt;
+		
+		if (comp_mode == 1) {
+			buffer = (char *) calloc(1024, sizeof(char));
+			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
+		}
 
 		if (i % output_freq == 0) {
 			double E_mag = 0;
@@ -157,7 +179,11 @@ int main(int argc, char *argv[]) {
 				E_mag += E_mag_vec[u];
 				B_mag += B_mag_vec[u];
 			}
-			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
+			if (comp_mode == 1) {
+				double mags[2] = { E_mag, B_mag };
+				compare_line(comp_line_len, &buffer, mags);
+			}
+			// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 
 			if ((!no_output) && (enable_checkpoints)) {
 				cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch * sizeof(double), e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
@@ -185,6 +211,8 @@ int main(int argc, char *argv[]) {
 		cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch * sizeof(double), b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
 		write_result();
 	}
+	if (comp_mode != 0)
+		printf("Total error is %.15e\n", total_error);
 
 	free_arrays();
 
