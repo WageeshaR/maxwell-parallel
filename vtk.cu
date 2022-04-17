@@ -83,11 +83,11 @@ int write_vtk(char* filename, char *comp_filename) {
             return 0;
         comp_f = fopen(comp_filename, "r");
     }
-    if (f == NULL) {
+    if (f == NULL && comp_mode == 0) {
         perror("Error");
         return -1;
     }
-    if (comp_f == NULL) {
+    if (comp_f == NULL && comp_mode == 2) {
         printf("Unable to locate comparison file %s\n", comp_filename);
         exit(1);
     }
