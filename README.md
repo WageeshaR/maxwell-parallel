@@ -39,7 +39,7 @@ $ mkdir mpi
 $ mpiexec -n 8 ./maxwell -x 100 -y 100 -c -f 1 -o mpi/my_sim -n 1000
 ```
 
-This will run a 100 x 100 problem (perfect for manageable visualisation), enable checkpointing every timestep, and will output the VTK files to the out directory. It will run for 1000 steps. *-n* flag indicates the number of parallel nodes to run the application.
+This will run a 100 x 100 problem (perfect for manageable visualisation), enable checkpointing every timestep, and will output the VTK files to the out directory. It will run for 1000 steps. First *-n* flag indicates the number of parallel nodes to run the application.
 
 ## Validation of output
 
