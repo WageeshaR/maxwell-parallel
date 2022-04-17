@@ -32,7 +32,7 @@ $ ./maxwell --help
 
 ```
 $ mkdir out
-$ ./maxwell -x 100 -y 100 -c -f 1 -o out/my_sim -n 1000 -l 8
+$ ./maxwell -x 100 -y 100 -c -f 1 -o omp/my_sim -n 1000 -l 8
 ```
 
 This will run a 100 x 100 problem (perfect for manageable visualisation), enable checkpointing every timestep, and will output the VTK files to the out directory. It will run for 1000 steps. The
