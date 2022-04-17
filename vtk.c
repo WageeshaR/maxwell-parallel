@@ -108,7 +108,7 @@ int write_vtk(char* filename) {
     for (int j = 0; j <= Y; j++) {
         for (int i = 0; i <= X; i++)
             if (enable_comparison)
-                fprintf(f, "%.15f %.15f 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
+                fprintf(f, "%.15e %.15e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
             else
                 fprintf(f, "  %.12e %.12e 0.000000000000e+00\n", E[i][j][0], E[i][j][1]);
     }
@@ -117,7 +117,7 @@ int write_vtk(char* filename) {
     for (int j = 0; j <= Y; j++) {
         for (int i = 0; i <= X; i++)
             if (enable_comparison)
-                fprintf(f, "0.000000000000e+00 0.000000000000e+00 %.15f\n", B[i][j][2]);
+                fprintf(f, "0.000000000000e+00 0.000000000000e+00 %.15e\n", B[i][j][2]);
             else
                 fprintf(f, "  0.000000000000e+00 0.000000000000e+00 %.12e\n", B[i][j][2]);
     }
