@@ -50,13 +50,13 @@ At the end of either of comparision modes, the application with print to the sys
 **Important:** To run in comparison mode, the original application has to be run in prior. Follow the procedure in the ***main*** branch to create required output files.
 
 ```
-$ ./maxwell -x 100 -y 100 -f 1 -o -n 1000 -l 4 -e 1
+$ ./maxwell -x 100 -y 100 -f 1 -n 1000 -l 4 -e 1
 ```
 
 Executing above line will run the application with comp_mode == 1. Notice the absence of *-c* flag. It is not required as it only compares total magnitudes.
 
 ```
-$ ./maxwell -x 100 -y 100 -c -f 1 -o -n 1000 -l 4 -e 2
+$ ./maxwell -x 100 -y 100 -c -f 1 -n 1000 -l 4 -e 2
 ```
 
 Executing above line will run the application with comp_mode == 2. *-c* flag is required to run in this mode as the comparison performs at file writing stage.
