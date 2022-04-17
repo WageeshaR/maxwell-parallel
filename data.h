@@ -31,6 +31,10 @@ extern double dt;
 extern double T;
 extern int steps;
 
+// Comparison variables
+extern double total_error;
+extern char comp_file_name_base[1024];
+
 // x = Ex values
 // o = Ey values
 // * = Bz values

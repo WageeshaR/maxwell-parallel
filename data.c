@@ -36,6 +36,10 @@ double dt = 0.0;
 double T = 0.0001;
 int steps = 0;
 
+// Comparison variables
+double total_error;
+char comp_file_name_base[1024];
+
 // Grids used for Yee grid computation
 int Ex_size_x, Ex_size_y;
 double ** Ex;

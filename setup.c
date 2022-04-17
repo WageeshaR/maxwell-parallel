@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "vtk.h"
 #include "data.h"
@@ -107,5 +108,33 @@ void problem_set_up() {
 			double mag = exp(-400.0 * (rlen - (lengthY / 4.0)) * (rlen - (lengthY / 4.0)));
             Ey[i-abs_ey_i][j] = mag * ty;
 		}
+	}
+}
+
+void compare_line(int len, char **buf, double mags[]) {
+	char *token;
+	char *ptr;
+	if (len != -1) {
+		token = strtok(*buf, " ");
+		int cnt = 0;
+		while (token)
+		{
+			int o_exp, e_exp;
+			double o_fraction, e_fraction, frac_diff;
+			double e_value = strtod(token, &ptr);
+			e_fraction = frexp(e_value, &e_exp);
+			o_fraction = frexp(mags[cnt], &o_exp);
+			int exp_diff = e_exp - o_exp;
+			if (exp_diff > 0)
+				frac_diff = fabs(e_fraction*pow(10, exp_diff) - o_fraction);
+			else if (exp_diff < 0)
+				frac_diff = fabs(e_fraction - o_fraction*pow(10, exp_diff));
+			else
+				frac_diff = fabs(e_fraction - o_fraction);
+			total_error += frac_diff;
+			token = strtok(NULL, " ");
+			cnt++;
+		}
+		
 	}
 }

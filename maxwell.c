@@ -3,6 +3,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <mpi.h>
+#include <string.h>
 
 #include "args.h"
 #include "vtk.h"
@@ -143,9 +144,28 @@ int main(int argc, char *argv[]) {
 	set_defaults();
 	parse_args(argc, argv);
 	setup();
+	total_error = 0;
 
-	if (rank == 0)
+	FILE *comp_file;
+	char comp_file_name[1024];
+	char *buffer;
+	size_t bufsize = 1024;
+	int comp_line_len = 0;
+
+	if (rank == 0) {
+		if (comp_mode != 0) {
+			sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", X * size, Y);
+			if (comp_mode == 1) {
+				sprintf(comp_file_name, comp_file_name_base, "_mag.cmp");
+				comp_file = fopen(comp_file_name, "r");
+				if (comp_file == NULL) {
+					printf("Unable to find comparison file %s\n", comp_file_name);
+					exit(1);
+				}
+			}
+		}
 		printf("Running problem size %f x %f on a %d x %d grid.\n", lengthX, lengthY, X*size, Y);
+	}
 	
 	if (verbose) print_opts();
 	
@@ -177,14 +197,24 @@ int main(int argc, char *argv[]) {
 		update_fields(ex_column, ey_column, bz_column);
 		t += dt;
 
+		if (comp_mode == 1 && rank == 0) {
+			buffer = (char *) calloc(1024, sizeof(char));
+			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
+		}
+
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
 			MPI_Barrier(MPI_COMM_WORLD);
 			MPI_Reduce(&E_mag, &global_E_mag, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 			MPI_Reduce(&B_mag, &global_B_mag, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-			if (rank == 0)
-				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
+			if (rank == 0) {
+				if (comp_mode == 1) {
+					double mags[2] = { global_E_mag, global_B_mag };
+					compare_line(comp_line_len, &buffer, mags);
+				}
+				// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
+			}
 			
 			if (enable_checkpoints && !no_output) {
 				MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
@@ -212,8 +242,12 @@ int main(int argc, char *argv[]) {
 	MPI_Type_free(&ey_column);
 	MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
 	MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
-	if (!no_output && rank == 0) 
+	
+	if (!no_output && rank == 0)
 		write_result();
+
+	if (comp_mode != 0 && rank == 0)
+		printf("Total error is %.15e\n", total_error);
 
 	free_arrays();
 
