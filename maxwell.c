@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
 	printf("Simulation complete.\n");
 
 	end = clock();
-	printf("Elapsed time is %f\n", (double) (end - start) / CLOCKS_PER_SEC);
+	printf("Elapsed time is %fs\n", (double) (end - start) / CLOCKS_PER_SEC);
 
 	if (!no_output) 
 		write_result();
