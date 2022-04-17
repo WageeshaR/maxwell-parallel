@@ -6,6 +6,6 @@ void set_basename(char *base);
 char *get_basename();
 int write_checkpoint(int iteration);
 int write_result();
-int write_vtk(char* filename);
+int write_vtk(char* filename, char *comp_filename);
 
 #endif

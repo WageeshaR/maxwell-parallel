@@ -7,4 +7,5 @@ void allocate_arrays();
 void free_arrays();
 void problem_set_up();
 void load_originals();
+void compare_line(int len, char **buf, double mags[]);
 #endif

@@ -146,38 +146,23 @@ int main(int argc, char *argv[]) {
 	double t = 0.0;
 	int i = 0;
 	int comp_line_len = 0;
-	double round_by = pow(10, 15);
+	round_by = pow(10, 15);
 	while (i < steps) {
 		apply_boundary();
 		update_fields();
 
 		t += dt;
 		if (comp_mode == 1)
-			comp_line_len = getline(&buffer, &bufsize, comp_file);
+			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
 
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
 			if (comp_mode == 1) {
-				char *token;
-				char *ptr;
 				double mags[2] = { E_mag, B_mag };
-				if (comp_line_len != -1) {
-					token = strtok(buffer, " ");
-					int cnt = 0;
-					while (token)
-					{
-						double value = strtod(token, &ptr);
-						value = round(value * round_by) / round_by; // Rounding to account only first 15 decimal points
-						double diff = abs(value - mags[cnt]);
-						total_error += diff;
-						token = strtok(NULL, " ");
-						cnt++;
-					}
-					
-				}
+				compare_line(comp_line_len, &buffer, mags);
 			}
-			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
+			// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
 			if ((!no_output) && (enable_checkpoints))
 				write_checkpoint(i);
@@ -192,11 +177,12 @@ int main(int argc, char *argv[]) {
 	printf("Simulation complete.\n");
 	end = omp_get_wtime();
 	printf("Elapsed wall clock time is %fs\n", end - start);
-	if (comp_mode != 0)
-		printf("Total error is %.15f\n", total_error);
 
 	if (!no_output) 
 		write_result();
+	
+	if (comp_mode != 0)
+		printf("Total error is %.15f\n", total_error);
 
 	free_arrays();
 

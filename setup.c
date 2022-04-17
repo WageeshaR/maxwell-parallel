@@ -158,3 +158,23 @@ void problem_set_up() {
 		}
 	}
 }
+
+void compare_line(int len, char **buf, double mags[]) {
+	char *token;
+	char *ptr;
+	if (len != -1) {
+		token = strtok(*buf, " ");
+		int cnt = 0;
+		while (token)
+		{
+			double value = strtod(token, &ptr);
+			// value = round(value * round_by) / round_by; // Rounding to account only first 15 decimal points
+			printf("%.15f v %.15f\n", value, mags[cnt]);
+			double diff = fabs(value - mags[cnt]);
+			total_error += diff;
+			token = strtok(NULL, " ");
+			cnt++;
+		}
+		
+	}
+}
