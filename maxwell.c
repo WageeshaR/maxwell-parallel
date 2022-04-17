@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
 					double mags[2] = { global_E_mag, global_B_mag };
 					compare_line(comp_line_len, &buffer, mags);
 				}
-				// printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
+				printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, global_E_mag, global_B_mag);
 			}
 			
 			if (enable_checkpoints && !no_output) {
