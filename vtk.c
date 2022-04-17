@@ -141,6 +141,7 @@ int write_vtk(char* filename, char *comp_filename) {
         for (int i = 0; i <= realX; i++)
             if (comp_mode == 2) {
                 double mags[3] = { 0, 0, global_B[i][j][2] };
+                buffer = (char *) calloc(1024, sizeof(char));
                 comp_line_len = getline(&buffer, &bufsize, comp_f);
                 compare_line(comp_line_len, &buffer, mags);
             }
