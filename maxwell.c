@@ -114,7 +114,6 @@ int main(int argc, char *argv[]) {
 	setup();
 	omp_set_num_threads(omp_num_threads);
 	total_error = 0;
-	printf("comp mode is %d\n", comp_mode);
 	
 	FILE *comp_file;
 	char comp_file_name[1024];
