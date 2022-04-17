@@ -168,7 +168,6 @@ void compare_line(int len, char **buf, double mags[]) {
 		while (token)
 		{
 			double value = strtod(token, &ptr);
-			printf("%.12e v %.12e\n", value, mags[cnt]);
 			double diff = fabs(value - mags[cnt]);
 			total_error += diff;
 			token = strtok(NULL, " ");
