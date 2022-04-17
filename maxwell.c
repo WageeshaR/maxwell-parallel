@@ -258,6 +258,8 @@ int main(int argc, char *argv[]) {
 		printf("Total error is %.15e\n", total_error);
 
 	free_arrays();
+	
+	MPI_Finalize();
 
 	exit(0);
 }
