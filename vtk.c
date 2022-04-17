@@ -80,8 +80,12 @@ int write_vtk(char* filename, char *comp_filename) {
     FILE * comp_f;
     if (comp_mode == 0) 
         f = fopen(filename, "w");
-    else if (comp_mode == 2)
+    else if (comp_mode == 2) {
+        if (comp_filename == NULL)
+            return 0;
         comp_f = fopen(comp_filename, "r");
+    }
+
     if (f == NULL && comp_mode == 0) {
         perror("Error");
         return -1;
