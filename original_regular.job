@@ -1,0 +1,9 @@
+#!/bin/bash
+#BATCH --job-name=maxwell_2D               # Job name
+#SBATCH --ntasks=1                         # Run a single task...
+#SBATCH --cpus-per-task=1                  # With one cpu
+#SBATCH --mem=2gb                          # Job memory request
+#SBATCH --time=00:05:00                    # Time limit hrs:min:sec
+#SBATCH --output=original_regular_%j.log   # Standard output and error log
+
+./maxwell -x 1000 -y 1000 -c -f 1 -o out/my_sim -n 1000

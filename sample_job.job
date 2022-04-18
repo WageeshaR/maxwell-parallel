@@ -1,9 +1,0 @@
-#!/bin/bash
-#BATCH --job-name=maxwell_omp             # Job name
-#SBATCH --ntasks=1                         # Run a single task...
-#SBATCH --cpus-per-task=1                  # ...with four cores
-#SBATCH --mem=1gb                          # Job memory request
-#SBATCH --time=00:05:00                    # Time limit hrs:min:sec
-#SBATCH --output=normal_job_%j.log            # Standard output and error log
-
-./maxwell -x 1000 -y 1000 -f 1 -o omp/my_sim -n 1000
