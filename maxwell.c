@@ -246,13 +246,13 @@ int main(int argc, char *argv[]) {
 	MPI_Gather(E[0][0], 1, global_3d_grid, global_E[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
 	MPI_Gather(B[0][0], 1, global_3d_grid, global_B[0][0], 1, global_3d_grid, 0, MPI_COMM_WORLD);
 	
-	if (!no_output && rank == 0)
-		write_result();
-
 	end = MPI_Wtime();
 
 	if (rank == 0)
 		printf("Total elapsed time is %fs\n", end - start);
+		
+	if (!no_output && rank == 0)
+		write_result();
 
 	if (comp_mode != 0 && rank == 0)
 		printf("Total error is %.15e\n", total_error);
