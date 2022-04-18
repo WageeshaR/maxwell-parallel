@@ -12,4 +12,11 @@ echo -e '\t'`hostname` at `date`
 echo $SLURM_CPUS_ON_NODE CPU cores available
 echo
 
-./maxwell -x 1000 -y 1000 -c -f 1 -o omp/my_sim -n 1000 -l 16
+printf "\nOn a 100 x 100 grid\n\n"
+./maxwell -x 100 -y 100 -f 1 -o omp/my_sim -n 1000 -l 2
+printf "\nOn a 400 x 400 grid\n\n"
+./maxwell -x 400 -y 400 -f 1 -o omp/my_sim -n 1000 -l 2
+printf "\nOn a 400 x 400 grid\n\n"
+./maxwell -x 1000 -y 1000 -f 1 -o omp/my_sim -n 1000 -l 2
+printf "\nOn a 2000 x 2000 grid\n\n"
+./maxwell -x 2000 -y 2000 -f 1 -o omp/my_sim -n 1000 -l 2
