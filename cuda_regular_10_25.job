@@ -16,4 +16,7 @@ cudaDevs=$(echo $CUDA_VISIBLE_DEVICES | sed -e 's/,/ /g')
 echo I can see GPU devices $CUDA_VISIBLE_DEVICES
 echo
 
-./maxwell -x 1000 -y 1000 -c -f 1 -o cuda/my_sim -n 1000 -p 10 -q 10 -r 20 -s 20
+printf "Running on a 1000 x 1000 grid"
+./maxwell -x 1000 -y 1000 -f 1 -o cuda/my_sim -n 1000 -p 10 -q 10 -r 25 -s 25
+printf "Running on a 2000 x 2000 grid"
+./maxwell -x 2000 -y 2000 -f 1 -o cuda/my_sim -n 1000 -p 10 -q 10 -r 25 -s 25

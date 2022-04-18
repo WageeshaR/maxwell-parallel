@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH --job-name=cuda_regular_job            # Job name
+#SBATCH --ntasks=1                             # Run a single task...
+#SBATCH --cpus-per-task=1                      # ...with a single CPU
+#SBATCH --mem=2gb                              # Job memory request
+#SBATCH --time=01:00:00                        # Time limit hrs:min:sec
+#SBATCH --output=cuda_regular_%j.log           # Standard output and error log
+#SBATCH --partition=gpu                        # Select the GPU nodes...
+#SBATCH --gres=gpu:1                           # ...and a single GPU
+  
+module load system/CUDA/11.0.2-GCC-9.3.0
+ 
+echo `date`: executing maxwell 2D regular job on host $HOSTNAME with $SLURM_CPUS_ON_NODE cpu cores
+echo
+cudaDevs=$(echo $CUDA_VISIBLE_DEVICES | sed -e 's/,/ /g')
+echo I can see GPU devices $CUDA_VISIBLE_DEVICES
+echo
+
+printf "Running on a 100 x 100 grid"
+./maxwell -x 100 -y 100 -f 1 -o cuda/my_sim -n 1000 -p 5 -q 5 -r 10 -s 10
+printf "Running on a 400 x 400 grid"
+./maxwell -x 400 -y 400 -f 1 -o cuda/my_sim -n 1000 -p 5 -q 5 -r 10 -s 10
+printf "Running on a 1000 x 1000 grid"
+./maxwell -x 1000 -y 1000 -f 1 -o cuda/my_sim -n 1000 -p 5 -q 5 -r 10 -s 10
+printf "Running on a 2000 x 2000 grid"
+./maxwell -x 2000 -y 2000 -f 1 -o cuda/my_sim -n 1000 -p 5 -q 5 -r 10 -s 10
