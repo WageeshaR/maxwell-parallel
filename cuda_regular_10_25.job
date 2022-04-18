@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=1                      # ...with a single CPU
 #SBATCH --mem=2gb                              # Job memory request
 #SBATCH --time=01:00:00                        # Time limit hrs:min:sec
-#SBATCH --output=cuda_regular_%j.log           # Standard output and error log
+#SBATCH --output=cuda_regular_10_25_%j.log           # Standard output and error log
 #SBATCH --partition=gpu                        # Select the GPU nodes...
 #SBATCH --gres=gpu:1                           # ...and a single GPU
   
