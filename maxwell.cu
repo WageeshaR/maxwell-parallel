@@ -212,16 +212,16 @@ int main(int argc, char *argv[]) {
 	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
 
+	gettimeofday(&timecheck, NULL);
+    end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
+	
+	printf("Elapsed time is %.4fs\n", (double)(end - start) / 1000.0);
+
 	if (!no_output) {
 		cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch * sizeof(double), e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
 		cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch * sizeof(double), b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
 		write_result();
 	}
-
-	gettimeofday(&timecheck, NULL);
-    end = (long)timecheck.tv_sec * 1000 + (long)timecheck.tv_usec / 1000;
-	
-	printf("Elapsed time is %.4fs\n", (double)(end - start) / 1000.0);
 	
 	if (comp_mode != 0)
 		printf("Total error is %.15e\n", total_error);
