@@ -8,15 +8,11 @@
 #SBATCH --time=00:05:00                      # Time limit hrs:min:sec
 #SBATCH --output=mpi_regular_16_%j.log       # Standard output and error log
 
-module load mpi/OpenMPI/4.0.5-GCC-10.2.0
-
-make
-
-echo "Running maxwell_mpi regular job on ${SLURM_NTASKS} CPU cores"
+printf "Running maxwell_mpi regular job on ${SLURM_NTASKS} CPU cores"
 
 printf "\n\nOn a 100 x 100 grid\n\n"
-mpiexec -n ${SLURM_NTASKS} ./maxwell -x 100 -y 100 -c -f 1 -o mpi/my_sim -n 1000
+mpiexec -n ${SLURM_NTASKS} ./maxwell -x 100 -y 100 -f 1 -o mpi/my_sim -n 1000
 printf "\n\nOn a 400 x 400 grid\n\n"
-mpiexec -n ${SLURM_NTASKS} ./maxwell -x 400 -y 400 -c -f 1 -o mpi/my_sim -n 1000
+mpiexec -n ${SLURM_NTASKS} ./maxwell -x 400 -y 400 -f 1 -o mpi/my_sim -n 1000
 printf "\n\nOn a 1000 x 1000 grid\n\n"
-mpiexec -n ${SLURM_NTASKS} ./maxwell -x 400 -y 400 -c -f 1 -o mpi/my_sim -n 1000
+mpiexec -n ${SLURM_NTASKS} ./maxwell -x 400 -y 400 -f 1 -o mpi/my_sim -n 1000
