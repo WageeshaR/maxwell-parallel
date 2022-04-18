@@ -8,6 +8,8 @@
 #SBATCH --time=00:05:00                      # Time limit hrs:min:sec
 #SBATCH --output=mpi_regular_8_%j.log        # Standard output and error log
 
+module load mpi/OpenMPI/4.0.5-GCC-10.2.0
+
 echo "Running maxwell_mpi regular job on ${SLURM_NTASKS} CPU cores"
 
 printf "\n\nOn a 100 x 100 grid\n\n"
