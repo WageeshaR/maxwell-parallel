@@ -93,6 +93,10 @@ int main(int argc, char *argv[]) {
 	parse_args(argc, argv);
 	setup();
 
+	/**
+	 * @brief 
+	 * setting up for comparison mode
+	 */
 	char comp_file_name[1024];
 	FILE *comp_file;
 	if (enable_comparison) {
