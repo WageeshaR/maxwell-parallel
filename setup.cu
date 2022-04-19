@@ -110,7 +110,14 @@ __global__ void problem_set_up(Arrays arrays, Specifics specifics) {
 	}
 }
 
-void compare_line(int len, char **buf, double mags[]) {
+/**
+ * @brief 
+ * function used to compare values read from a single line in comparison files
+ * @param len 	return value from getline() function
+ * @param buf 	buffer stored contents of line
+ * @param vals 	array storing current program's values to compare with values in buffer
+ */
+void compare_line(int len, char **buf, double vals[]) {
 	char *token;
 	char *ptr;
 	if (len != -1) {
@@ -119,7 +126,7 @@ void compare_line(int len, char **buf, double mags[]) {
 		while (token)
 		{
 			double e_value = strtod(token, &ptr);
-			total_error += fabs(e_value - mags[cnt]);
+			total_error += fabs(e_value - vals[cnt]);
 			token = strtok(NULL, " ");
 			cnt++;
 		}

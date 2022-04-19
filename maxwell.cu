@@ -14,10 +14,17 @@
  * 
  */
 __global__ void update_fields(Constants constants, Specifics specifics, Arrays arrays) {
+	/** 
+	 * @param tidx x id of current thread
+	 * @param tidy y id of current thread
+	 * @param cpx_x number of cells in X direction for this thread
+	 * @param cpx_y number of cells in Y direction for this thread
+	 * each memory access are adjusted with the pitched alignment
+	 */
 	int tidx = blockIdx.x*blockDim.x + threadIdx.x;
 	int tidy = blockIdx.y*blockDim.y + threadIdx.y;
-	int cpx_ex = arrays.Ex_size_x / (gridDim.x * blockDim.x); // Cells per cuda thread in X direction (keeping this same for all fields)
-	int cpy_ey = arrays.Ey_size_y / (gridDim.y * blockDim.y); // Cells per cuda thread in Y direction
+	int cpx_ex = arrays.Ex_size_x / (gridDim.x * blockDim.x);
+	int cpy_ey = arrays.Ey_size_y / (gridDim.y * blockDim.y);
 
 	for (int i = cpx_ex * tidx; i < cpx_ex * (tidx + 1); i++) {
 		for (int j = cpy_ey * tidy; j < cpy_ey * (tidy + 1); j++) {
@@ -50,15 +57,21 @@ __global__ void update_fields(Constants constants, Specifics specifics, Arrays a
  * 
  */
 __global__ void apply_boundary(Arrays arrays) {
+	/** 
+	 * @param tidx x id of current thread
+	 * @param tidy y id of current thread
+	 * @param cpx_x number of cells in X direction for this thread
+	 * @param cpx_y number of cells in Y direction for this thread
+	 * each memory access are adjusted with the pitched alignment
+	 */
 	int tidx = blockIdx.x*blockDim.x + threadIdx.x;
 	int tidy = blockIdx.y*blockDim.y + threadIdx.y;
-	int cpx_ex = arrays.Ex_size_x / (gridDim.x * blockDim.x); // Cells per cuda thread in X direction
-	int cpy_ey = arrays.Ey_size_y / (gridDim.y * blockDim.y); // Cells per cuda thread in Y direction
+	int cpx_ex = arrays.Ex_size_x / (gridDim.x * blockDim.x);
+	int cpy_ey = arrays.Ey_size_y / (gridDim.y * blockDim.y);
 	
 	for (int i = tidx * cpx_ex; i < cpx_ex * (tidx + 1); i++) {
 		if (tidy == 0) {
 			arrays.Ex[i * arrays.ex_pitch] = -arrays.Ex[i * arrays.ex_pitch + 1];
-			// printf("%14.8e\n", -arrays.Ex[i * arrays.Ex_size_y + 1]);
 		}
 		if (tidy == gridDim.y * blockDim.y - 1)
 			arrays.Ex[i * arrays.ex_pitch + arrays.Ex_size_y - 1] = -arrays.Ex[i * arrays.ex_pitch + arrays.Ex_size_y - 2];
@@ -79,10 +92,17 @@ __global__ void apply_boundary(Arrays arrays) {
  * @param B_mag The returned total magnitude of the Magnetic field (B) 
  */
 __global__ void resolve_to_grid(double *E_mag, double *B_mag, Arrays arrays) {
+	/** 
+	 * @param tidx x id of current thread
+	 * @param tidy y id of current thread
+	 * @param cpx_x number of cells in X direction for this thread
+	 * @param cpx_y number of cells in Y direction for this thread
+	 * each memory access are adjusted with the pitched alignment
+	 */
 	int tidx = blockIdx.x*blockDim.x + threadIdx.x;
 	int tidy = blockIdx.y*blockDim.y + threadIdx.y;
-	int cpx_x = (arrays.E_size_x - 1) / (gridDim.x * blockDim.x); // Cells per cuda thread in X direction
-	int cpy_y = (arrays.E_size_y - 1) / (gridDim.y * blockDim.y); // Cells per cuda thread in Y direction
+	int cpx_x = (arrays.E_size_x - 1) / (gridDim.x * blockDim.x);
+	int cpy_y = (arrays.E_size_y - 1) / (gridDim.y * blockDim.y);
 	E_mag[tidy * gridDim.x * blockDim.x + tidx] = 0.0;
 	B_mag[tidy * gridDim.x * blockDim.x + tidx] = 0.0;
 
@@ -123,9 +143,13 @@ int main(int argc, char *argv[]) {
 	setup();
 	total_error = 0;
 
-	FILE *comp_file;
+	/**
+	 * @brief 
+	 * setting up for comparison mode
+	 */
+	FILE *comp_file;			// comparison file pointer
 	char comp_file_name[1024];
-	char *buffer;
+	char *buffer;				// buffer used to read comparison file
 	size_t bufsize = 1024;
 	if (comp_mode != 0) {
 		sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", specifics.X, specifics.Y);
@@ -144,15 +168,20 @@ int main(int argc, char *argv[]) {
 	if (verbose) print_opts();
 	
 	allocate_arrays();
-	dim3 blockShape = dim3(cuda_consts.block_x,cuda_consts.block_y);
-	dim3 gridShape = dim3(cuda_consts.grid_x,cuda_consts.grid_y);
+
+	dim3 blockShape = dim3(cuda_consts.block_x, cuda_consts.block_y);
+	dim3 gridShape = dim3(cuda_consts.grid_x, cuda_consts.grid_y);
 	int total_threads = gridShape.x * blockShape.x * gridShape.y * blockShape.y;
+	
 	problem_set_up<<<1,1>>>(arrays, specifics);
+	
+	// below vectors are needed to store E_mag and B_mag values in device and host
 	double *E_mag_vec = (double *) calloc(total_threads, sizeof(double));
 	double *B_mag_vec = (double *) calloc(total_threads, sizeof(double));
 	double *d_E_mag_vec, *d_B_mag_vec;
 	cudaMalloc(&d_E_mag_vec, total_threads * sizeof(double));
 	cudaMalloc(&d_B_mag_vec, total_threads * sizeof(double));
+	
 	long e_pitch_host = arrays.E_size_y * arrays.E_size_z * sizeof(double);
 	long b_pitch_host = arrays.B_size_y * arrays.B_size_z * sizeof(double);
 
@@ -170,9 +199,10 @@ int main(int argc, char *argv[]) {
 		update_fields<<<gridShape, blockShape>>>(constants, specifics, arrays);
 		t += specifics.dt;
 		
+		// Reading the line here (disregarding output frequency) to keep track of lines
 		if (comp_mode == 1) {
 			buffer = (char *) calloc(1024, sizeof(char));
-			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
+			comp_line_len = getline(&buffer, &bufsize, comp_file);
 		}
 
 		if (i % output_freq == 0) {
@@ -181,10 +211,13 @@ int main(int argc, char *argv[]) {
 			resolve_to_grid<<<gridShape, blockShape>>>(d_E_mag_vec, d_B_mag_vec, arrays);
 			cudaMemcpy(E_mag_vec, d_E_mag_vec, total_threads * sizeof(double), cudaMemcpyDeviceToHost);
 			cudaMemcpy(B_mag_vec, d_B_mag_vec, total_threads * sizeof(double), cudaMemcpyDeviceToHost);
+			
+			// summing over the vector to calculate total magnitude from all threads
 			for (int u = 0; u < total_threads; u++) {
 				E_mag += E_mag_vec[u];
 				B_mag += B_mag_vec[u];
 			}
+			
 			if (comp_mode == 1) {
 				double mags[2] = { E_mag, B_mag };
 				compare_line(comp_line_len, &buffer, mags);
@@ -192,6 +225,7 @@ int main(int argc, char *argv[]) {
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, specifics.dt, E_mag, B_mag);
 
 			if ((!no_output) && (enable_checkpoints)) {
+				// used cudaMemcpy2D to adjust for pitch alignments when copying
 				cudaMemcpy2D(&host_E[0][0][0], e_pitch_host, arrays.E, arrays.e_pitch * sizeof(double), e_pitch_host, arrays.E_size_x, cudaMemcpyDeviceToHost);
 				cudaMemcpy2D(&host_B[0][0][0], b_pitch_host, arrays.B, arrays.b_pitch * sizeof(double), b_pitch_host, arrays.B_size_x, cudaMemcpyDeviceToHost);
 				write_checkpoint(i);

@@ -6,6 +6,13 @@
 #include "vtk.h"
 #include "data.h"
 
+/**
+ * @brief 
+ * @param Constants struct to store constants
+ * @param Specifics struct to store dimensions and other dimension specific data
+ * @param Arrays    struct to store 2D and 3D array related data
+ * @param Cuda      struct to store Cuda grid and block dimensions
+ */
 struct Constants constants = {
 	.c = 299792458,
 	.mu = 4.0 * M_PI * 1.0e-7,
@@ -17,6 +24,7 @@ struct Specifics specifics;
 struct Arrays arrays;
 struct Cuda cuda_consts;
 
+// 3D arrays used in host kernel
 double *** host_E;
 double *** host_B;
 

@@ -1,6 +1,13 @@
 #ifndef DATA_H
 #define DATA_H
 
+/**
+ * @brief 
+ * @param Constants struct to store constants
+ * @param Specifics struct to store dimensions and other dimension specific data
+ * @param Arrays    struct to store 2D and 3D array related data
+ * @param Cuda      struct to store Cuda grid and block dimensions
+ */
 struct Constants {
     const double c;
     const double mu;
@@ -18,7 +25,6 @@ struct Specifics {
     double dt;
 };
 
-extern double * Ex2;
 
 struct Arrays {
     int Ex_size_x, Ex_size_y;
