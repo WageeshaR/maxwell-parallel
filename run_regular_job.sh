@@ -1,5 +1,4 @@
 #!/bin/bash
 
-make;
-
-sbatch original_regular.job;
+make && 
+sbatch original_regular.job
