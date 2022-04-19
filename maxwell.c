@@ -16,6 +16,7 @@
  */
 void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype datatype3) {
 
+	// halo exchange for Ey array
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Sendrecv(Ey[0], 1, datatype2, left, 13, Ey[Ey_size_x-1], 1, datatype2, right, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -32,6 +33,7 @@ void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype 
 		}
 	}
 
+	// halo exchange for Bz array
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Sendrecv(Bz[Bz_size_x], 1, datatype3, right, 13, Bz[0], 1, datatype3, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
@@ -41,6 +43,7 @@ void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype 
 		}
 	}
 
+	// halo exchange for Ex array
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Sendrecv(Ex[Ex_size_x], 1, datatype1, right, 13, Ex[0], 1, datatype1, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
@@ -55,6 +58,7 @@ void apply_boundary() {
 		Ex[i][Ex_size_y-1] = -Ex[i][Ex_size_y-2];
 	}
 
+	// condition imposed to check rank 0
 	for (int j = 0; j < Ey_size_y; j++) {
 		if (rank == 0)
 			Ey[0][j] = -Ey[1][j];
@@ -73,6 +77,7 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 	*E_mag = 0.0;
 	*B_mag = 0.0;
 	
+	// control parameters adjusted to check rank 0
 	for (int i = rank == 0 ? 1 : 0; i < E_size_x-1; i++) {
 		for (int j = 1; j < E_size_y-1; j++) {
 			E[i][j][0] = (Ex[i][j] + Ex[i+1][j]) / 2.0;
@@ -82,6 +87,7 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 		}
 	}
 
+	// control parameters adjusted to check rank 0
 	for (int i = rank == 0 ? 1 : 0; i < B_size_x-1; i++) {
 		for (int j = 1; j < B_size_y-1; j++) {
 			B[i][j][2] = (Bz[i][j] + Bz[i+1][j] + Bz[i+1][j-1] + Bz[i][j-1]) / 4.0;
@@ -107,12 +113,15 @@ int main(int argc, char *argv[]) {
 	setup();
 	total_error = 0;
 
+	/**
+	 * @brief
+	 * setting up for comparison
+	 */
 	FILE *comp_file;
 	char comp_file_name[1024];
 	char *buffer;
 	size_t bufsize = 1024;
 	int comp_line_len = 0;
-
 	if (rank == 0) {
 		if (comp_mode != 0) {
 			sprintf(comp_file_name_base, "comp/comp_%d_%d%%s", X * size, Y);
@@ -139,6 +148,10 @@ int main(int argc, char *argv[]) {
 	int i = 0;
 	double global_E_mag, global_B_mag;
 
+	/**
+	 * @brief 
+	 * setting up MPI datatypes for 2D arrays to use in halo exchanges
+	 */
 	MPI_Datatype ex_column, ey_column, bz_column;
 	MPI_Type_vector(1, Ex_size_y, Ex_size_y, MPI_DOUBLE, &ex_column);
 	MPI_Type_commit(&ex_column);
@@ -146,9 +159,15 @@ int main(int argc, char *argv[]) {
 	MPI_Type_commit(&ey_column);
 	MPI_Type_vector(1, Bz_size_y, Bz_size_y, MPI_DOUBLE, &bz_column);
 	MPI_Type_commit(&bz_column);
+	
+	// calculate left and right ranks
 	left = rank-1 < 0 ? MPI_PROC_NULL : rank-1;
 	right = rank+1 >= size ? MPI_PROC_NULL: rank+1;
 	
+	/**
+	 * @brief 
+	 * setting up MPI datatype for 3D array to gather resolved data from all nodes
+	 */
 	MPI_Datatype global_3d_grid;
 	MPI_Type_vector(E_size_x-1, E_size_z*E_size_y, E_size_z*E_size_y, MPI_DOUBLE, &global_3d_grid);
 	MPI_Type_commit(&global_3d_grid);
@@ -161,9 +180,10 @@ int main(int argc, char *argv[]) {
 		update_fields(ex_column, ey_column, bz_column);
 		t += dt;
 
+		// reading lines here (regardless of output freq.) to keep track of lines
 		if (comp_mode == 1 && rank == 0) {
 			buffer = (char *) calloc(1024, sizeof(char));
-			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
+			comp_line_len = getline(&buffer, &bufsize, comp_file);
 		}
 
 		if (i % output_freq == 0) {
