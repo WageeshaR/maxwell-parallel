@@ -1,6 +1,6 @@
 #!/bin/bash
 
-module load compiler/GCC/11.2.0 && make;
+make;
 
 ./maxwell -x 100 -y 100 -f 1 -o omp/my_sim -n 1000 -l 2 > omp_regular_2.log && printf "\n\n" >> omp_regular_2.log &&
 ./maxwell -x 400 -y 400 -f 1 -o omp/my_sim -n 1000 -l 2 >> omp_regular_2.log && printf "\n\n" >> omp_regular_2.log &&

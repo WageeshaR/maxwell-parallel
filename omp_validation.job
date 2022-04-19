@@ -12,4 +12,6 @@ echo -e '\t'`hostname` at `date`
 echo $SLURM_CPUS_ON_NODE CPU cores available
 echo
 
+module load compiler/GCC/11.2.0 && make;
+
 ./maxwell -x 400 -y 400 -f 1 -n 1000 -l 4 -e 1
