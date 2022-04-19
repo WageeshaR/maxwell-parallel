@@ -19,41 +19,30 @@ void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Sendrecv(Ey[0], 1, datatype2, left, 13, Ey[Ey_size_x-1], 1, datatype2, right, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-	for (int i = 0; i < Bz_size_x; i++) {
+	for (int i = 1; i < Bz_size_x+1; i++) {
 		for (int j = 0; j < Bz_size_y; j++) {
-			Bz[i][j] = Bz[i][j] - (dt / dx) * (Ey[i+1][j] - Ey[i][j])
+			Bz[i][j] = Bz[i][j] - (dt / dx) * (Ey[i][j] - Ey[i-1][j])
 				                + (dt / dy) * (Ex[i][j+1] - Ex[i][j]);
 		}
 	}
 
-	for (int i = 0; i < Ex_size_x; i++) {
+	for (int i = 1; i < Ex_size_x+1; i++) {
 		for (int j = 1; j < Ex_size_y-1; j++) {
 			Ex[i][j] = Ex[i][j] + (dt / (dy * eps * mu)) * (Bz[i][j] - Bz[i][j-1]);
 		}
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Sendrecv(Bz[Bz_size_x-1], 1, datatype3, right, 13, Bz[Bz_size_x], 1, datatype3, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Sendrecv(Bz[Bz_size_x], 1, datatype3, right, 13, Bz[0], 1, datatype3, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-	if (rank == 0) {
-		for (int i = 1; i < Ey_size_x-1; i++) {
-			for (int j = 0; j < Ey_size_y; j++) {
-				Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
-			}
-		}
-	} else {
-		for (int i = 0; i < Ey_size_x-1; i++) {
-			for (int j = 0; j < Ey_size_y; j++) {
-				if (i == 0)
-					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[Bz_size_x][j]);
-				else
-					Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i][j] - Bz[i-1][j]);
-			}
+	for (int i = 0; i < Ey_size_x-1; i++) {
+		for (int j = 0; j < Ey_size_y; j++) {
+			Ey[i][j] = Ey[i][j] - (dt / (dx * eps * mu)) * (Bz[i+1][j] - Bz[i][j]);
 		}
 	}
 
 	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Sendrecv(Ex[Ex_size_x-1], 1, datatype1, right, 13, Ex[Ex_size_x], 1, datatype1, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+	MPI_Sendrecv(Ex[Ex_size_x], 1, datatype1, right, 13, Ex[0], 1, datatype1, left, 13, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 }
 
 /**
@@ -61,7 +50,7 @@ void update_fields(MPI_Datatype datatype1, MPI_Datatype datatype2, MPI_Datatype 
  * 
  */
 void apply_boundary() {
-	for (int i = 0; i < Ex_size_x; i++) {
+	for (int i = 1; i < Ex_size_x+1; i++) {
 		Ex[i][0] = -Ex[i][1];
 		Ex[i][Ex_size_y-1] = -Ex[i][Ex_size_y-2];
 	}
@@ -84,48 +73,20 @@ void resolve_to_grid(double *E_mag, double *B_mag) {
 	*E_mag = 0.0;
 	*B_mag = 0.0;
 	
-	if (rank == 0) {
-		for (int i = 1; i < E_size_x-1; i++) {
-			for (int j = 1; j < E_size_y-1; j++) {
-				E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
-				E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
+	for (int i = rank == 0 ? 1 : 0; i < E_size_x-1; i++) {
+		for (int j = 1; j < E_size_y-1; j++) {
+			E[i][j][0] = (Ex[i][j] + Ex[i+1][j]) / 2.0;
+			E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
 
-				*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
-			}
+			*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
 		}
+	}
 
-		for (int i = 1; i < B_size_x-1; i++) {
-			for (int j = 1; j < B_size_y-1; j++) {
-				B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
+	for (int i = rank == 0 ? 1 : 0; i < B_size_x-1; i++) {
+		for (int j = 1; j < B_size_y-1; j++) {
+			B[i][j][2] = (Bz[i][j] + Bz[i+1][j] + Bz[i+1][j-1] + Bz[i][j-1]) / 4.0;
 
-				*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
-			}
-		}
-	} else {
-		for (int i = 0; i < E_size_x-1; i++) {
-			for (int j = 1; j < E_size_y-1; j++) {
-				if (i == 0) {
-					E[i][j][0] = (Ex[Bz_size_x][j] + Ex[i][j]) / 2.0;
-					E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
-				}
-				else {
-					E[i][j][0] = (Ex[i-1][j] + Ex[i][j]) / 2.0;
-					E[i][j][1] = (Ey[i][j-1] + Ey[i][j]) / 2.0;
-				}
-
-				*E_mag += sqrt((E[i][j][0] * E[i][j][0]) + (E[i][j][1] * E[i][j][1]));
-			}
-		}
-
-		for (int i = 0; i < B_size_x-1; i++) {
-			for (int j = 1; j < B_size_y-1; j++) {
-				if (i == 0)
-					B[i][j][2] = (Bz[Bz_size_x][j] + Bz[i][j] + Bz[i][j-1] + Bz[Bz_size_x][j-1]) / 4.0;
-				else
-					B[i][j][2] = (Bz[i-1][j] + Bz[i][j] + Bz[i][j-1] + Bz[i-1][j-1]) / 4.0;
-
-				*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
-			}
+			*B_mag += sqrt(B[i][j][2] * B[i][j][2]);
 		}
 	}
 }

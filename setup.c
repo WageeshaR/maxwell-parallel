@@ -94,7 +94,7 @@ void problem_set_up() {
             double rlen = sqrt(rx*rx + ry*ry);
 			double tx = (rlen == 0) ? 0 : ry / rlen;
             double mag = exp(-400.0 * (rlen - (lengthX / 4.0)) * (rlen - (lengthX / 4.0)));
-            Ex[i-abs_ex_i][j] = mag * tx;
+            Ex[i-abs_ex_i+1][j] = mag * tx;
 		}
 	}
     for (int i = abs_ey_i + 0; i < abs_ey_i + Ey_size_x-1; i++ ) {
