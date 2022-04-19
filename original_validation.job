@@ -2,8 +2,9 @@
 #BATCH --job-name=maxwell_2D                  # Job name
 #SBATCH --ntasks=1                            # Run a single task...
 #SBATCH --cpus-per-task=1                     # With one cpu
-#SBATCH --mem=2gb                             # Job memory request
+#SBATCH --mem=1gb                             # Job memory request
 #SBATCH --time=00:05:00                       # Time limit hrs:min:sec
 #SBATCH --output=original_validation_%j.log   # Standard output and error log
 
+module load compiler/GCC/11.2.0 && make &&
 ./maxwell -x 400 -y 400 -c -f 1 -n 1000 -e
