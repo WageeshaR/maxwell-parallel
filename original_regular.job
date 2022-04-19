@@ -6,4 +6,8 @@
 #SBATCH --time=00:05:00                    # Time limit hrs:min:sec
 #SBATCH --output=original_regular_%j.log   # Standard output and error log
 
-./maxwell -x 1000 -y 1000 -c -f 1 -o out/my_sim -n 1000
+./maxwell -x 1000 -y 100 -f 1 -o out/my_sim -n 1000
+printf "\n\n"
+./maxwell -x 400 -y 400 -f 1 -o out/my_sim -n 1000
+printf "\n\n"
+./maxwell -x 1000 -y 1000 -f 1 -o out/my_sim -n 1000
