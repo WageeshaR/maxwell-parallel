@@ -10,4 +10,5 @@
 
 echo "Running maxwell_mpi validation job on ${SLURM_NTASKS} CPU cores"
 
+module load compiler/GCC/11.2.0 mpi/OpenMPI/4.1.1-GCC-11.2.0 && make &&
 mpiexec -n ${SLURM_NTASKS} ./maxwell -x 400 -y 400 -f 1 -n 1000 -e 1
