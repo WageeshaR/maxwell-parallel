@@ -115,6 +115,10 @@ int main(int argc, char *argv[]) {
 	omp_set_num_threads(omp_num_threads);
 	total_error = 0;
 	
+	/**
+	 * @brief 
+	 * setting up for comparison
+	 */
 	FILE *comp_file;
 	char comp_file_name[1024];
 	char *buffer;
@@ -150,18 +154,23 @@ int main(int argc, char *argv[]) {
 		update_fields();
 
 		t += dt;
+
+		// reading line here (disregarding output frequency) to keep track of lines
 		if (comp_mode == 1) {
 			buffer = (char *) calloc(1024, sizeof(char));
-			comp_line_len = getline(&buffer, &bufsize, comp_file); // Reading the line here continuous reading regardless of output_freq
+			comp_line_len = getline(&buffer, &bufsize, comp_file);
 		}
 
 		if (i % output_freq == 0) {
 			double E_mag, B_mag;
 			resolve_to_grid(&E_mag, &B_mag);
+
+			// perform comparison for current E_mag and B_mag values
 			if (comp_mode == 1) {
 				double mags[2] = { E_mag, B_mag };
 				compare_line(comp_line_len, &buffer, mags);
 			}
+			
 			printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 
 			if ((!no_output) && (enable_checkpoints))
@@ -175,6 +184,7 @@ int main(int argc, char *argv[]) {
 
 	printf("Step %8d, Time: %14.8e (dt: %14.8e), E magnitude: %14.8e, B magnitude: %14.8e\n", i, t, dt, E_mag, B_mag);
 	printf("Simulation complete.\n");
+	
 	end = omp_get_wtime();
 	printf("Elapsed wall clock time is %fs\n", end - start);
 

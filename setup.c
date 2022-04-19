@@ -25,54 +25,6 @@ void set_defaults() {
 	set_default_base();
 }
 
-void load_originals(char *filename) {
-	char *tail = strrchr(filename, '/');
-	char newfile[100] = "original";
-	strcat(newfile, tail);
-	FILE * fp;
-    char * line = NULL;
-    size_t len = 0;
-    ssize_t read;
-	fp = fopen(newfile, "r");
-	int reading = 0;
-	int iter = 0;
-	const char s[2] = " ";
-	char *token;
-	if (fp == NULL)
-		exit(EXIT_FAILURE);
-	while ((read = getline(&line, &len, fp)) != -1) {
-		int j = iter / 101;
-		int i = iter % 101;
-		if (reading == 1 && strcmp(line, "VECTORS B_field float\n") != 0) {
-			/* get the first token */
-			token = strtok(line, s);
-			O_E[i][j][0] = atof(token);
-			/* walk through other tokens */
-			while( token != NULL ) {
-				token = strtok(NULL, s);
-				O_E[i][j][1] = atof(token);
-				break;	// Breaking because in O_E we only read first 2 dimensions
-			}
-			iter++;
-		}
-		if (reading == 2) {
-			/* get the last char string */
-			char *last = strrchr(line, ' ');
-			O_B[i][j][2] = atof(last);
-			iter++;
-		}
-		if (strcmp(line, "VECTORS E_field float\n") == 0) {
-			reading = 1;
-			iter = 0;
-		}
-		if (strcmp(line, "VECTORS B_field float\n") == 0) {
-			reading = 2;
-			iter = 0;
-		}
-	}
-	fclose(fp);
-}
-
 /**
  * @brief Set up some of the values required for computation after arguments have been loaded
  * 
@@ -159,7 +111,14 @@ void problem_set_up() {
 	}
 }
 
-void compare_line(int len, char **buf, double mags[]) {
+/**
+ * @brief 
+ * function used to compare values read from a single line in comparison files
+ * @param len 	return value from getline() function
+ * @param buf 	buffer stored contents of line
+ * @param vals 	array storing current program's values to compare with values in buffer
+ */
+void compare_line(int len, char **buf, double vals[]) {
 	char *token;
 	char *ptr;
 	if (len != -1) {
@@ -168,7 +127,7 @@ void compare_line(int len, char **buf, double mags[]) {
 		while (token)
 		{
 			double e_value = strtod(token, &ptr);
-			total_error += fabs(e_value - mags[cnt]);
+			total_error += fabs(e_value - vals[cnt]);
 			token = strtok(NULL, " ");
 			cnt++;
 		}
