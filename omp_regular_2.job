@@ -4,7 +4,7 @@
 #SBATCH --cpus-per-task=2                  # With sixteen cpus
 #SBATCH --mem=1gb                          # Job memory request
 #SBATCH --time=00:05:00                    # Time limit hrs:min:sec
-#SBATCH --output=omp_regular_%j.log        # Standard output and error log
+#SBATCH --output=omp_regular_2_%j.log        # Standard output and error log
 
 echo My working directory is `pwd`
 echo Running OMP regular job on host:
